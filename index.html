@@ -383,7 +383,7 @@
         </div>
       </div>
       <div class="border-t border-gray-800 pt-8 text-center">
-        <p class="text-gray-400">© 2026 AirFrostUnlimitedInnovations. All rights reserved.</p>
+        <p class="text-gray-400">© <span id="footerYear"></span> AirFrostUnlimitedInnovations. All rights reserved.</p>
       </div>
     </div>
   </footer>
@@ -415,7 +415,7 @@
       }
 
       // Set current year in footer
-      // document.getElementById('footerYear').textContent = new Date().getFullYear();
+      document.getElementById('footerYear').textContent = new Date().getFullYear();
 
       // Update images on page load
       updatePreviewImages();
@@ -451,26 +451,6 @@
             });
           }
         });
-      });
-
-      // Contact form
-      document.getElementById('contactForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const service = document.getElementById('service').value;
-        const message = document.getElementById('message').value;
-
-        if (!name || !email || !message) {
-          document.getElementById('status').innerText = 'Please fill in all required fields.';
-          document.getElementById('status').style.color = 'red';
-          return;
-        }
-
-        // Simulate sending (in a real app, this would send to a server)
-        document.getElementById('status').innerText = `Thank you ${name}! Your message about ${service} has been sent. I will contact you at ${email} soon.`;
-        document.getElementById('status').style.color = 'green';
-        document.getElementById('contactForm').reset();
       });
 
       // Contact form
