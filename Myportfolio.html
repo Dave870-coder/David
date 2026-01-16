@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Software Developer & Graphic Designer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-black text-white p-6">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <img src="airfrost.png" alt="Airfrost Logo" class="h-12 w-auto">
+      <nav class="space-x-6">
+        <a href="#services" class="hover:text-blue-400">Services</a>
+        <a href="#portfolio" class="hover:text-blue-400">Portfolio</a>
+        <a href="#contact" class="hover:text-blue-400">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-4xl font-bold mb-4">I Build Software & Design Visual Experiences</h2>
+      <p class="text-lg mb-6">Automated systems, web apps, UI/UX & professional graphic design</p>
+      <a href="#contact" class="bg-white text-black px-6 py-3 rounded-xl font-semibold">Hire Me</a>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services" class="py-16">
+    <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-10">
+      <!-- Software Development -->
+      <div class="bg-white p-8 rounded-2xl shadow">
+        <h3 class="text-2xl font-bold mb-4">Software Development</h3>
+        <div id="softwarePreviewContainer" class="grid grid-cols-2 gap-4 mb-4">
+          <!-- Preview images appear here -->
+        </div>
+        <ul class="list-disc ml-5 space-y-2">
+          <li>Web & Desktop Applications</li>
+          <li>Automation & APIs</li>
+          <li>Database Systems</li>
+          <li>AI-Powered Solutions</li>
+        </ul>
+      </div>
+      <!-- Graphic Design -->
+      <div class="bg-white p-8 rounded-2xl shadow">
+        <h3 class="text-2xl font-bold mb-4">Graphic Design</h3>
+        <div id="designPreviewContainer" class="grid grid-cols-2 gap-4 mb-4">
+          <!-- Preview images appear here -->
+        </div>
+        <ul class="list-disc ml-5 space-y-2">
+          <li>Logo & Brand Identity</li>
+          <li>UI/UX Design</li>
+          <li>Social Media Designs</li>
+          <li>Posters & Flyers</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio -->
+  <section id="portfolio" class="bg-gray-200 py-16">
+    <div class="max-w-6xl mx-auto">
+      <h3 class="text-3xl font-bold text-center mb-6">My Projects</h3>
+      <p class="text-center mb-10 text-gray-600">Software applications and graphic design portfolio</p>
+
+      <!-- Admin Login -->
+      <div id="adminLogin" class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow mb-10">
+        <h4 class="text-xl font-semibold mb-4 text-center">Admin Login</h4>
+        <input type="password" id="adminPassword" placeholder="Enter Admin Password" class="w-full p-3 border rounded mb-3" />
+        <button id="adminLoginBtn" class="w-full bg-black text-white p-3 rounded-xl">Login as Admin</button>
+      </div>
+
+      <!-- Admin Upload -->
+      <div id="adminUpload" class="hidden bg-white p-6 rounded-2xl shadow mb-10">
+        <h4 class="text-xl font-semibold mb-4">Upload New Project</h4>
+        <input type="text" id="projectTitle" placeholder="Project Title" class="w-full p-3 border rounded mb-3" />
+        <select id="projectType" class="w-full p-3 border rounded mb-3">
+          <option>Software Project</option>
+          <option>Graphic Design</option>
+        </select>
+        <input type="file" id="projectFile" class="w-full p-3 border rounded mb-3" />
+        <button id="uploadProjectBtn" class="bg-green-600 text-white px-6 py-3 rounded-xl">Upload Project</button>
+      </div>
+
+      <!-- Project List -->
+      <div id="projectList" class="grid md:grid-cols-3 gap-6"></div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="py-16">
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow">
+      <h3 class="text-2xl font-bold mb-6 text-center">Contact Me</h3>
+      <form id="contactForm" class="space-y-4">
+        <input type="text" id="name" placeholder="Your Name" class="w-full p-3 border rounded" required />
+        <input type="email" id="email" placeholder="Your Email" class="w-full p-3 border rounded" required />
+        <select id="service" class="w-full p-3 border rounded">
+          <option>Software Development</option>
+          <option>Graphic Design</option>
+          <option>Both</option>
+        </select>
+        <textarea id="message" placeholder="Describe your project" class="w-full p-3 border rounded" required></textarea>
+        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl">Send Message</button>
+      </form>
+      <p id="status" class="text-center mt-4"></p>
+    </div>
+  </section>
+
+  <footer class="bg-black text-white text-center p-4">
+    © 2026 Onuoha Ikechukwu David | Software Developer & Graphic Designer
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Contact form
+      document.getElementById('contactForm').addEventListener('submit', e => {
+        e.preventDefault();
+        document.getElementById('status').innerText = 'Message sent successfully! I will contact you soon.';
+        document.getElementById('contactForm').reset();
+      });
+
+      let isAdminLoggedIn = false;
+
+      // Admin login
+      function adminLogin() {
+        const pass = document.getElementById('adminPassword').value;
+        if (pass === 'admin123') {
+          document.getElementById('adminLogin').classList.add('hidden');
+          document.getElementById('adminUpload').classList.remove('hidden');
+          isAdminLoggedIn = true;
+        } else {
+          alert('Incorrect admin password');
+        }
+      }
+
+      // Add project
+      function addProject() {
+        if (!isAdminLoggedIn) { alert('Admin must be logged in'); return; }
+        const title = document.getElementById('projectTitle').value;
+        const type = document.getElementById('projectType').value;
+        const fileInput = document.getElementById('projectFile');
+        if (!title || !fileInput.files.length) { alert('Provide title and file'); return; }
+        const fileURL = URL.createObjectURL(fileInput.files[0]);
+
+        // Portfolio card
+        const card = document.createElement('div');
+        card.className = 'bg-white p-6 rounded-2xl shadow';
+        card.innerHTML = `<h4 class="text-xl font-bold mb-2">${title}</h4><p class="text-sm text-gray-500 mb-4">${type}</p><a href="${fileURL}" target="_blank" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Project</a>`;
+        document.getElementById('projectList').appendChild(card);
+
+        // Add preview image to Services
+        const preview = document.createElement('img');
+        preview.src = fileURL;
+        preview.alt = title;
+        preview.className = 'w-full h-48 object-cover rounded-lg';
+        if (type === 'Software Project') {
+          document.getElementById('softwarePreviewContainer').appendChild(preview);
+        } else {
+          document.getElementById('designPreviewContainer').appendChild(preview);
+        }
+
+        document.getElementById('projectTitle').value = '';
+        document.getElementById('projectFile').value = '';
+      }
+
+      document.getElementById('adminLoginBtn').addEventListener('click', adminLogin);
+      document.getElementById('uploadProjectBtn').addEventListener('click', addProject);
+
+      // Disable inspect / right-click
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
+          e.preventDefault();
+          alert('Inspecting is disabled on this site.');
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
