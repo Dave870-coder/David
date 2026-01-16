@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Software Developer & Graphic Designer</title>
+  <meta name="description" content="Portfolio of Onuoha Ikechukwu David - Software Developer & Graphic Designer specializing in web apps, automation, UI/UX design, and professional graphics.">
+  <meta name="keywords" content="software developer, graphic designer, web development, UI/UX design, portfolio">
+  <meta name="author" content="Onuoha Ikechukwu David">
+  <title>Software Developer & Graphic Designer - Onuoha Ikechukwu David</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -36,7 +39,9 @@
       <div class="bg-white p-8 rounded-2xl shadow">
         <h3 class="text-2xl font-bold mb-4">Software Development</h3>
         <div id="softwarePreviewContainer" class="grid grid-cols-2 gap-4 mb-4">
-          <!-- Preview images appear here -->
+          <!-- Sample software previews -->
+          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">Web App Preview</div>
+          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">Mobile App Preview</div>
         </div>
         <ul class="list-disc ml-5 space-y-2">
           <li>Web & Desktop Applications</li>
@@ -49,7 +54,9 @@
       <div class="bg-white p-8 rounded-2xl shadow">
         <h3 class="text-2xl font-bold mb-4">Graphic Design</h3>
         <div id="designPreviewContainer" class="grid grid-cols-2 gap-4 mb-4">
-          <!-- Preview images appear here -->
+          <!-- Sample design previews -->
+          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">Logo Design</div>
+          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">UI/UX Mockup</div>
         </div>
         <ul class="list-disc ml-5 space-y-2">
           <li>Logo & Brand Identity</li>
@@ -87,7 +94,29 @@
       </div>
 
       <!-- Project List -->
-      <div id="projectList" class="grid md:grid-cols-3 gap-6"></div>
+      <div id="projectList" class="grid md:grid-cols-3 gap-6">
+        <!-- Sample Software Project -->
+        <div class="bg-white p-6 rounded-2xl shadow">
+          <h4 class="text-xl font-bold mb-2">E-Commerce Platform</h4>
+          <p class="text-sm text-gray-500 mb-4">Software Project</p>
+          <p class="text-gray-600 mb-4">A full-stack e-commerce solution with payment integration and admin dashboard.</p>
+          <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Details</a>
+        </div>
+        <!-- Sample Design Project -->
+        <div class="bg-white p-6 rounded-2xl shadow">
+          <h4 class="text-xl font-bold mb-2">Brand Identity Package</h4>
+          <p class="text-sm text-gray-500 mb-4">Graphic Design</p>
+          <p class="text-gray-600 mb-4">Complete brand identity including logo, business cards, and social media templates.</p>
+          <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Details</a>
+        </div>
+        <!-- Sample Software Project -->
+        <div class="bg-white p-6 rounded-2xl shadow">
+          <h4 class="text-xl font-bold mb-2">Task Management App</h4>
+          <p class="text-sm text-gray-500 mb-4">Software Project</p>
+          <p class="text-gray-600 mb-4">A collaborative task management application with real-time updates and team features.</p>
+          <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Details</a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -111,16 +140,32 @@
   </section>
 
   <footer class="bg-black text-white text-center p-4">
-    © 2026 Onuoha Ikechukwu David | Software Developer & Graphic Designer
+    <p id="footerText">© <span id="currentYear"></span> Onuoha Ikechukwu David | Software Developer & Graphic Designer</p>
   </footer>
 
   <!-- Scripts -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Set current year in footer
+      document.getElementById('currentYear').textContent = new Date().getFullYear();
+
       // Contact form
       document.getElementById('contactForm').addEventListener('submit', e => {
         e.preventDefault();
-        document.getElementById('status').innerText = 'Message sent successfully! I will contact you soon.';
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const service = document.getElementById('service').value;
+        const message = document.getElementById('message').value;
+
+        if (!name || !email || !message) {
+          document.getElementById('status').innerText = 'Please fill in all required fields.';
+          document.getElementById('status').style.color = 'red';
+          return;
+        }
+
+        // Simulate sending (in a real app, this would send to a server)
+        document.getElementById('status').innerText = `Thank you ${name}! Your message about ${service} has been sent. I will contact you at ${email} soon.`;
+        document.getElementById('status').style.color = 'green';
         document.getElementById('contactForm').reset();
       });
 
@@ -170,15 +215,6 @@
 
       document.getElementById('adminLoginBtn').addEventListener('click', adminLogin);
       document.getElementById('uploadProjectBtn').addEventListener('click', addProject);
-
-      // Disable inspect / right-click
-      document.addEventListener('contextmenu', e => e.preventDefault());
-      document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'U')) {
-          e.preventDefault();
-          alert('Inspecting is disabled on this site.');
-        }
-      });
     });
   </script>
 
