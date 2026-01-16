@@ -728,7 +728,7 @@
       // Initialize EmailJS with error handling
       (function() {
         try {
-          emailjs.init('YOUR_PUBLIC_KEY'); // Replace with your EmailJS public key
+          emailjs.init('BNSUhuosGc2PNVWKQ'); // Replace with your EmailJS public key
         } catch (error) {
           console.error('EmailJS initialization failed:', error);
           showErrorMessage('Email service initialization failed. Contact form may not work properly.');
@@ -783,7 +783,7 @@
         };
 
         // Send email using EmailJS
-        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+        emailjs.send('service_ujjveqe', 'template_kax5h0k', templateParams)
           .then(function(response) {
             console.log('SUCCESS!', response.status, response.text);
             alert('Submitted! Your message has been sent successfully.');
