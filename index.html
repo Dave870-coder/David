@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <meta name="description" content="Portfolio of Onuoha Ikechukwu David - Software Developer & Graphic Designer specializing in web apps, automation, UI/UX design, and professional graphics.">
   <meta name="keywords" content="software developer, graphic designer, web development, UI/UX design, portfolio">
   <meta name="author" content="Onuoha Ikechukwu David">
@@ -20,9 +20,41 @@
   <script>
     tailwind.config = {
       theme: {
+        screens: {
+          'xs': '320px',    // Palm tops, very small phones
+          'sm': '640px',    // Small phones
+          'md': '768px',    // Tablets
+          'lg': '1024px',   // Small laptops
+          'xl': '1280px',   // Laptops
+          '2xl': '1536px',  // Large laptops/desktops
+          '3xl': '1920px',  // Large monitors
+          '4xl': '2560px',  // Ultra-wide monitors
+          '5xl': '3840px',  // 4K displays
+        },
         extend: {
           fontFamily: {
             'inter': ['Inter', 'sans-serif'],
+          },
+          fontSize: {
+            'xs': ['0.75rem', { lineHeight: '1rem' }],
+            'sm': ['0.875rem', { lineHeight: '1.25rem' }],
+            'base': ['1rem', { lineHeight: '1.5rem' }],
+            'lg': ['1.125rem', { lineHeight: '1.75rem' }],
+            'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+            '2xl': ['1.5rem', { lineHeight: '2rem' }],
+            '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+            '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
+            '5xl': ['3rem', { lineHeight: '1' }],
+            '6xl': ['3.75rem', { lineHeight: '1' }],
+            '7xl': ['4.5rem', { lineHeight: '1' }],
+            '8xl': ['6rem', { lineHeight: '1' }],
+            '9xl': ['8rem', { lineHeight: '1' }],
+          },
+          spacing: {
+            '18': '4.5rem',
+            '88': '22rem',
+            '112': '28rem',
+            '128': '32rem',
           },
           animation: {
             'fade-in': 'fadeIn 0.6s ease-in-out',
@@ -50,10 +82,81 @@
   <style>
     html {
       scroll-behavior: smooth;
+      font-size: clamp(14px, 2.5vw, 18px); /* Fluid base font size */
     }
     body {
       font-family: 'Inter', sans-serif;
+      line-height: 1.6;
     }
+
+    /* Fluid typography for headings */
+    h1, h2, h3, h4, h5, h6 {
+      line-height: 1.2;
+    }
+
+    /* Container queries for better component adaptation */
+    .container-fluid {
+      width: 100%;
+      max-width: 100%;
+      padding-left: clamp(1rem, 4vw, 2rem);
+      padding-right: clamp(1rem, 4vw, 2rem);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Responsive images */
+    img {
+      max-width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+
+    /* Better button responsiveness */
+    .btn-responsive {
+      padding: clamp(0.5rem, 2vw, 1rem) clamp(1rem, 4vw, 2rem);
+      font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+    }
+
+    /* Flexible grid system */
+    .grid-responsive {
+      display: grid;
+      gap: clamp(1rem, 3vw, 2rem);
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    }
+
+    @media (min-width: 640px) {
+      .grid-responsive {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+      }
+    }
+
+    @media (min-width: 768px) {
+      .grid-responsive {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .grid-responsive {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
+      }
+    }
+
+    /* Ultra-wide screen support */
+    @media (min-width: 1920px) {
+      .container-fluid {
+        max-width: 1920px;
+      }
+    }
+
+    /* Very small screen support (palm tops) */
+    @media (max-width: 320px) {
+      .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+
     .animate-on-scroll {
       opacity: 0;
       transform: translateY(30px);
@@ -76,74 +179,76 @@
 <body class="bg-gray-100 text-gray-800">
 
   <!-- Header -->
-  <header class="fixed top-0 w-full bg-black/90 backdrop-blur-md text-white p-4 z-50 shadow-lg animate-slide-up">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <img src="airfrost.png" alt="Airfrost Logo" class="h-10 w-auto hover:scale-110 transition-transform duration-300">
-        <div class="hidden md:block">
-          <h1 class="text-lg font-semibold">Onuoha Ikechukwu David</h1>
-          <p class="text-xs text-gray-300">Software Developer & Designer</p>
+  <header class="fixed top-0 w-full bg-black/90 backdrop-blur-md text-white z-50 shadow-lg animate-slide-up">
+    <div class="container-fluid py-2 xs:py-3 sm:py-4">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-2 xs:space-x-3">
+          <img src="airfrost.png" alt="Airfrost Logo" class="h-6 xs:h-8 sm:h-10 w-auto hover:scale-110 transition-transform duration-300">
+          <div class="hidden lg:block">
+            <h1 class="text-sm xl:text-base 2xl:text-lg font-semibold">Onuoha Ikechukwu David</h1>
+            <p class="text-xs xl:text-sm text-gray-300">Software Developer & Designer</p>
+          </div>
         </div>
+        <!-- Mobile menu button -->
+        <button id="mobileMenuBtn" class="lg:hidden text-white focus:outline-none p-1">
+          <svg class="w-5 h-5 xs:w-6 xs:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+        <!-- Desktop navigation -->
+        <nav class="hidden lg:flex space-x-4 xl:space-x-6 2xl:space-x-8">
+          <a href="#home" class="hover:text-blue-400 transition-colors duration-300 relative group text-sm xl:text-base">
+            Home
+            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
+          </a>
+          <a href="#services" class="hover:text-blue-400 transition-colors duration-300 relative group text-sm xl:text-base">
+            Services
+            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
+          </a>
+          <a href="#portfolio" class="hover:text-blue-400 transition-colors duration-300 relative group text-sm xl:text-base">
+            Portfolio
+            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
+          </a>
+          <a href="#contact" class="hover:text-blue-400 transition-colors duration-300 relative group text-sm xl:text-base">
+            Contact
+            <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
+          </a>
+        </nav>
+        <!-- Mobile navigation -->
+        <nav id="mobileMenu" class="lg:hidden absolute top-full left-0 w-full bg-black/95 backdrop-blur-md transform -translate-y-full transition-transform duration-300 ease-in-out">
+          <div class="px-4 py-4 xs:py-6 space-y-3 xs:space-y-4">
+            <a href="#home" class="block py-2 hover:text-blue-400 transition-colors duration-300 text-sm xs:text-base">Home</a>
+            <a href="#services" class="block py-2 hover:text-blue-400 transition-colors duration-300 text-sm xs:text-base">Services</a>
+            <a href="#portfolio" class="block py-2 hover:text-blue-400 transition-colors duration-300 text-sm xs:text-base">Portfolio</a>
+            <a href="#contact" class="block py-2 hover:text-blue-400 transition-colors duration-300 text-sm xs:text-base">Contact</a>
+          </div>
+        </nav>
       </div>
-      <!-- Mobile menu button -->
-      <button id="mobileMenuBtn" class="md:hidden text-white focus:outline-none">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </button>
-      <!-- Desktop navigation -->
-      <nav class="hidden md:flex space-x-8">
-        <a href="#home" class="hover:text-blue-400 transition-colors duration-300 relative group">
-          Home
-          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
-        </a>
-        <a href="#services" class="hover:text-blue-400 transition-colors duration-300 relative group">
-          Services
-          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
-        </a>
-        <a href="#portfolio" class="hover:text-blue-400 transition-colors duration-300 relative group">
-          Portfolio
-          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
-        </a>
-        <a href="#contact" class="hover:text-blue-400 transition-colors duration-300 relative group">
-          Contact
-          <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
-        </a>
-      </nav>
-      <!-- Mobile navigation -->
-      <nav id="mobileMenu" class="md:hidden absolute top-full left-0 w-full bg-black/95 backdrop-blur-md transform -translate-y-full transition-transform duration-300 ease-in-out">
-        <div class="px-4 py-6 space-y-4">
-          <a href="#home" class="block py-2 hover:text-blue-400 transition-colors duration-300">Home</a>
-          <a href="#services" class="block py-2 hover:text-blue-400 transition-colors duration-300">Services</a>
-          <a href="#portfolio" class="block py-2 hover:text-blue-400 transition-colors duration-300">Portfolio</a>
-          <a href="#contact" class="block py-2 hover:text-blue-400 transition-colors duration-300">Contact</a>
-        </div>
-      </nav>
     </div>
   </header>
 
   <!-- Hero -->
-  <section id="home" class="gradient-bg text-white py-20 md:py-32 pt-24 min-h-screen flex items-center">
-    <div class="max-w-6xl mx-auto text-center px-4 animate-on-scroll">
-      <div class="mb-8">
-        <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
+  <section id="home" class="gradient-bg text-white py-16 xs:py-20 sm:py-24 md:py-32 pt-16 xs:pt-20 sm:pt-24 min-h-screen flex items-center">
+    <div class="container-fluid text-center animate-on-scroll">
+      <div class="mb-6 xs:mb-8">
+        <h2 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl 3xl:text-9xl font-bold mb-3 xs:mb-4 md:mb-6 leading-tight">
           I Build <span class="text-yellow-300">Software</span> & Design
           <span class="block text-blue-200">Visual Experiences</span>
         </h2>
-        <p class="text-lg sm:text-xl md:text-2xl mb-6 md:mb-8 text-gray-200 max-w-3xl mx-auto leading-relaxed px-2">
+        <p class="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl mb-4 xs:mb-6 md:mb-8 text-gray-200 max-w-3xl mx-auto leading-relaxed px-2">
           Automated systems, web apps, UI/UX & professional graphic design
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto">
-          <a href="#contact" class="w-full sm:w-auto bg-white text-gray-900 px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+        <div class="flex flex-col sm:flex-row gap-3 xs:gap-4 justify-center items-center max-w-xs xs:max-w-sm sm:max-w-md md:max-w-none mx-auto">
+          <a href="#contact" class="w-full sm:w-auto bg-white text-gray-900 px-4 xs:px-6 md:px-8 py-2 xs:py-3 md:py-4 rounded-full font-semibold text-sm xs:text-base md:text-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl btn-responsive">
             Hire Me
           </a>
-          <a href="#portfolio" class="w-full sm:w-auto border-2 border-white text-white px-6 md:px-8 py-3 md:py-4 rounded-full font-semibold text-base md:text-lg hover:bg-white hover:text-gray-900 transition-all duration-300 transform hover:scale-105">
+          <a href="#portfolio" class="w-full sm:w-auto border-2 border-white text-white px-4 xs:px-6 md:px-8 py-2 xs:py-3 md:py-4 rounded-full font-semibold text-sm xs:text-base md:text-lg hover:bg-white hover:text-gray-900 transition-all duration-300 transform hover:scale-105 btn-responsive">
             View My Work
           </a>
         </div>
       </div>
-      <div class="mt-12 md:mt-16 animate-bounce-subtle">
-        <svg class="w-8 h-8 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="mt-8 xs:mt-10 md:mt-12 lg:mt-16 animate-bounce-subtle">
+        <svg class="w-6 h-6 xs:w-8 xs:h-8 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
         </svg>
       </div>
@@ -151,14 +256,14 @@
   </section>
 
   <!-- Services -->
-  <section id="services" class="py-16 md:py-24 bg-gray-50">
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="text-center mb-12 md:mb-16 animate-on-scroll">
-        <h3 class="text-3xl md:text-4xl font-bold mb-4 text-gray-900">My Services</h3>
-        <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-2">Professional software development and graphic design services tailored to your needs</p>
+  <section id="services" class="py-12 xs:py-16 sm:py-20 md:py-24 lg:py-32 bg-gray-50">
+    <div class="container-fluid">
+      <div class="text-center mb-8 xs:mb-10 md:mb-12 lg:mb-16 animate-on-scroll">
+        <h3 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 xs:mb-4 text-gray-900">My Services</h3>
+        <p class="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-600 max-w-2xl xs:max-w-3xl mx-auto px-2">Professional software development and graphic design services tailored to your needs</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 xs:gap-8 md:gap-10 lg:gap-12">
         <!-- Software Development -->
         <div class="bg-white p-8 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-on-scroll">
           <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
@@ -225,36 +330,36 @@
   </section>
 
   <!-- Portfolio -->
-  <section id="portfolio" class="py-16 md:py-24 bg-gray-50">
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="text-center mb-12 md:mb-16 animate-on-scroll">
-        <h3 class="text-3xl md:text-4xl font-bold mb-4 text-gray-900">My Projects</h3>
-        <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-2">Software applications and graphic design portfolio showcasing my expertise</p>
+  <section id="portfolio" class="py-12 xs:py-16 sm:py-20 md:py-24 lg:py-32 bg-gray-50">
+    <div class="container-fluid">
+      <div class="text-center mb-8 xs:mb-10 md:mb-12 lg:mb-16 animate-on-scroll">
+        <h3 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 xs:mb-4 text-gray-900">My Projects</h3>
+        <p class="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-600 max-w-2xl xs:max-w-3xl mx-auto px-2">Software applications and graphic design portfolio showcasing my expertise</p>
       </div>
 
       <!-- Admin Login -->
-      <div id="adminLogin" class="max-w-md mx-auto bg-gradient-to-r from-gray-50 to-gray-100 p-6 md:p-8 rounded-3xl shadow-xl mb-8 md:mb-12 animate-on-scroll">
-        <h4 class="text-xl md:text-2xl font-semibold mb-6 text-center text-gray-900">Admin Access</h4>
-        <input type="password" id="adminPassword" placeholder="Enter Admin Password" class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-xl mb-4 focus:border-blue-500 focus:outline-none transition-colors" />
-        <button id="adminLoginBtn" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 md:p-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">Login as Admin</button>
+      <div id="adminLogin" class="max-w-sm xs:max-w-md mx-auto bg-gradient-to-r from-gray-50 to-gray-100 p-4 xs:p-6 md:p-8 rounded-3xl shadow-xl mb-6 xs:mb-8 md:mb-12 animate-on-scroll">
+        <h4 class="text-lg xs:text-xl md:text-2xl font-semibold mb-4 xs:mb-6 text-center text-gray-900">Admin Access</h4>
+        <input type="password" id="adminPassword" placeholder="Enter Admin Password" class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl mb-4 focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base" />
+        <button id="adminLoginBtn" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Login as Admin</button>
       </div>
 
       <!-- Admin Upload -->
-      <div id="adminUpload" class="hidden max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-purple-50 p-6 md:p-8 rounded-3xl shadow-xl mb-8 md:mb-12 animate-on-scroll">
-        <h4 class="text-xl md:text-2xl font-semibold mb-6 text-center text-gray-900">Upload New Project</h4>
-        <div class="space-y-4">
-          <input type="text" id="projectTitle" placeholder="Project Title" class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors" />
-          <select id="projectType" class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors">
+      <div id="adminUpload" class="hidden max-w-lg xs:max-w-xl md:max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-purple-50 p-4 xs:p-6 md:p-8 rounded-3xl shadow-xl mb-6 xs:mb-8 md:mb-12 animate-on-scroll">
+        <h4 class="text-lg xs:text-xl md:text-2xl font-semibold mb-4 xs:mb-6 text-center text-gray-900">Upload New Project</h4>
+        <div class="space-y-3 xs:space-y-4">
+          <input type="text" id="projectTitle" placeholder="Project Title" class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base" />
+          <select id="projectType" class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base">
             <option>Software Project</option>
             <option>Graphic Design</option>
           </select>
-          <input type="file" id="projectFile" class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-          <button id="uploadProjectBtn" class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 md:p-4 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105">Upload Project</button>
+          <input type="file" id="projectFile" class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors file:mr-3 xs:file:mr-4 file:py-2 file:px-3 xs:file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+          <button id="uploadProjectBtn" class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Upload Project</button>
         </div>
       </div>
 
       <!-- Project List -->
-      <div id="projectList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      <div id="projectList" class="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-6 md:gap-8">
         <!-- Sample Software Project -->
         <div class="bg-white p-6 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-on-scroll border border-gray-100">
           <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
@@ -296,14 +401,14 @@
   </section>
 
   <!-- Contact -->
-  <section id="contact" class="py-16 md:py-24 bg-gradient-to-r from-gray-900 to-gray-800">
-    <div class="max-w-4xl mx-auto px-4">
-      <div class="text-center mb-12 md:mb-16 animate-on-scroll">
-        <h3 class="text-3xl md:text-4xl font-bold mb-4 text-white">Let's Work Together</h3>
-        <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto px-2">Ready to bring your ideas to life? Get in touch and let's create something amazing.</p>
+  <section id="contact" class="py-12 xs:py-16 sm:py-20 md:py-24 lg:py-32 bg-gradient-to-r from-gray-900 to-gray-800">
+    <div class="container-fluid">
+      <div class="text-center mb-8 xs:mb-10 md:mb-12 lg:mb-16 animate-on-scroll">
+        <h3 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 xs:mb-4 text-white">Let's Work Together</h3>
+        <p class="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-300 max-w-2xl xs:max-w-3xl mx-auto px-2">Ready to bring your ideas to life? Get in touch and let's create something amazing.</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 xs:gap-8 md:gap-10 lg:gap-12">
         <!-- Contact Info -->
         <div class="animate-on-scroll">
           <h4 class="text-2xl font-semibold mb-6 text-white">Get In Touch</h4>
@@ -375,37 +480,37 @@
     </div>
   </section>
 
-  <footer class="bg-gray-900 text-white py-8 md:py-12">
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
+  <footer class="bg-gray-900 text-white py-8 xs:py-10 md:py-12 lg:py-16">
+    <div class="container-fluid">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 xs:gap-8 md:gap-10 lg:gap-12 mb-6 xs:mb-8 md:mb-10 lg:mb-12">
         <div>
-          <div class="flex items-center space-x-3 mb-4">
-            <img src="airfrost.png" alt="Airfrost Logo" class="h-8 w-auto">
-            <span class="text-xl font-bold">Airfrost</span>
+          <div class="flex items-center space-x-2 xs:space-x-3 mb-3 xs:mb-4">
+            <img src="airfrost.png" alt="Airfrost Logo" class="h-6 xs:h-8 w-auto">
+            <span class="text-lg xs:text-xl font-bold">Airfrost</span>
           </div>
-          <p class="text-gray-400 text-sm md:text-base">Creating digital experiences that matter. Software development and graphic design services.</p>
+          <p class="text-gray-400 text-sm xs:text-base">Creating digital experiences that matter. Software development and graphic design services.</p>
         </div>
         <div>
-          <h5 class="text-lg font-semibold mb-4">Quick Links</h5>
+          <h5 class="text-base xs:text-lg font-semibold mb-3 xs:mb-4">Quick Links</h5>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="#home" class="hover:text-white transition-colors">Home</a></li>
-            <li><a href="#services" class="hover:text-white transition-colors">Services</a></li>
-            <li><a href="#portfolio" class="hover:text-white transition-colors">Portfolio</a></li>
-            <li><a href="#contact" class="hover:text-white transition-colors">Contact</a></li>
+            <li><a href="#home" class="hover:text-white transition-colors text-sm xs:text-base">Home</a></li>
+            <li><a href="#services" class="hover:text-white transition-colors text-sm xs:text-base">Services</a></li>
+            <li><a href="#portfolio" class="hover:text-white transition-colors text-sm xs:text-base">Portfolio</a></li>
+            <li><a href="#contact" class="hover:text-white transition-colors text-sm xs:text-base">Contact</a></li>
           </ul>
         </div>
         <div>
-          <h5 class="text-lg font-semibold mb-4">Services</h5>
+          <h5 class="text-base xs:text-lg font-semibold mb-3 xs:mb-4">Services</h5>
           <ul class="space-y-2 text-gray-400">
-            <li>Web Development</li>
-            <li>Mobile Apps</li>
-            <li>UI/UX Design</li>
-            <li>Brand Identity</li>
+            <li class="text-sm xs:text-base">Web Development</li>
+            <li class="text-sm xs:text-base">Mobile Apps</li>
+            <li class="text-sm xs:text-base">UI/UX Design</li>
+            <li class="text-sm xs:text-base">Brand Identity</li>
           </ul>
         </div>
       </div>
-      <div class="border-t border-gray-800 pt-6 md:pt-8 text-center">
-        <p class="text-gray-400 text-sm">© <span id="footerYear"></span> AirFrostUnlimitedInnovations. All rights reserved.</p>
+      <div class="border-t border-gray-800 pt-6 xs:pt-8 md:pt-10 text-center">
+        <p class="text-gray-400 text-sm xs:text-base">© <span id="footerYear"></span> AirFrostUnlimitedInnovations. All rights reserved.</p>
       </div>
     </div>
   </footer>
@@ -436,6 +541,15 @@
           mobileMenu.classList.add('-translate-y-full');
           mobileMenu.classList.remove('translate-y-0');
         });
+      });
+
+      // Close mobile menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!mobileMenuBtn.contains(e.target) && !mobileMenu.contains(e.target) && isMenuOpen) {
+          isMenuOpen = false;
+          mobileMenu.classList.add('-translate-y-full');
+          mobileMenu.classList.remove('translate-y-0');
+        }
       });
 
       // Anti-inspect functionality
