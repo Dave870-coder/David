@@ -40,8 +40,18 @@
         <h3 class="text-2xl font-bold mb-4">Software Development</h3>
         <div id="softwarePreviewContainer" class="grid grid-cols-2 gap-4 mb-4">
           <!-- Sample software previews -->
-          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">Web App Preview</div>
-          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">Mobile App Preview</div>
+          <div class="relative group cursor-pointer">
+            <img src="https://picsum.photos/300/200?random=1" alt="Web Application Preview" class="w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105">
+            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+              <span class="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Web App</span>
+            </div>
+          </div>
+          <div class="relative group cursor-pointer">
+            <img src="https://picsum.photos/300/200?random=2" alt="Mobile Application Preview" class="w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105">
+            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+              <span class="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Mobile App</span>
+            </div>
+          </div>
         </div>
         <ul class="list-disc ml-5 space-y-2">
           <li>Web & Desktop Applications</li>
@@ -55,8 +65,18 @@
         <h3 class="text-2xl font-bold mb-4">Graphic Design</h3>
         <div id="designPreviewContainer" class="grid grid-cols-2 gap-4 mb-4">
           <!-- Sample design previews -->
-          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">Logo Design</div>
-          <div class="bg-gray-200 h-32 rounded-lg flex items-center justify-center text-gray-500">UI/UX Mockup</div>
+          <div class="relative group cursor-pointer">
+            <img src="https://picsum.photos/300/200?random=3" alt="Logo Design Preview" class="w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105">
+            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+              <span class="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Logo Design</span>
+            </div>
+          </div>
+          <div class="relative group cursor-pointer">
+            <img src="https://picsum.photos/300/200?random=4" alt="UI/UX Design Preview" class="w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105">
+            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center">
+              <span class="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity">UI/UX Design</span>
+            </div>
+          </div>
         </div>
         <ul class="list-disc ml-5 space-y-2">
           <li>Logo & Brand Identity</li>
@@ -96,25 +116,25 @@
       <!-- Project List -->
       <div id="projectList" class="grid md:grid-cols-3 gap-6">
         <!-- Sample Software Project -->
-        <div class="bg-white p-6 rounded-2xl shadow">
+        <div class="bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300">
           <h4 class="text-xl font-bold mb-2">E-Commerce Platform</h4>
           <p class="text-sm text-gray-500 mb-4">Software Project</p>
           <p class="text-gray-600 mb-4">A full-stack e-commerce solution with payment integration and admin dashboard.</p>
-          <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Details</a>
+          <a href="#" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors duration-200">View Details</a>
         </div>
         <!-- Sample Design Project -->
-        <div class="bg-white p-6 rounded-2xl shadow">
+        <div class="bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300">
           <h4 class="text-xl font-bold mb-2">Brand Identity Package</h4>
           <p class="text-sm text-gray-500 mb-4">Graphic Design</p>
           <p class="text-gray-600 mb-4">Complete brand identity including logo, business cards, and social media templates.</p>
-          <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Details</a>
+          <a href="#" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors duration-200">View Details</a>
         </div>
         <!-- Sample Software Project -->
-        <div class="bg-white p-6 rounded-2xl shadow">
+        <div class="bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300">
           <h4 class="text-xl font-bold mb-2">Task Management App</h4>
           <p class="text-sm text-gray-500 mb-4">Software Project</p>
           <p class="text-gray-600 mb-4">A collaborative task management application with real-time updates and team features.</p>
-          <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Details</a>
+          <a href="#" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors duration-200">View Details</a>
         </div>
       </div>
     </div>
@@ -192,21 +212,41 @@
         if (!title || !fileInput.files.length) { alert('Provide title and file'); return; }
         const fileURL = URL.createObjectURL(fileInput.files[0]);
 
-        // Portfolio card
+        // Portfolio card with enhanced styling
         const card = document.createElement('div');
-        card.className = 'bg-white p-6 rounded-2xl shadow';
-        card.innerHTML = `<h4 class="text-xl font-bold mb-2">${title}</h4><p class="text-sm text-gray-500 mb-4">${type}</p><a href="${fileURL}" target="_blank" class="inline-block bg-blue-600 text-white px-4 py-2 rounded-xl">View Project</a>`;
+        card.className = 'bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300';
+        card.innerHTML = `
+          <h4 class="text-xl font-bold mb-2">${title}</h4>
+          <p class="text-sm text-gray-500 mb-4">${type}</p>
+          <p class="text-gray-600 mb-4">Click to view the uploaded project file.</p>
+          <a href="${fileURL}" target="_blank" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors duration-200">View Project</a>
+        `;
         document.getElementById('projectList').appendChild(card);
 
-        // Add preview image to Services
+        // Add preview image to Services with hover effects
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'relative group cursor-pointer';
+
         const preview = document.createElement('img');
         preview.src = fileURL;
-        preview.alt = title;
-        preview.className = 'w-full h-48 object-cover rounded-lg';
+        preview.alt = title + ' Preview';
+        preview.className = 'w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center';
+
+        const label = document.createElement('span');
+        label.className = 'text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity';
+        label.textContent = title;
+
+        overlay.appendChild(label);
+        previewContainer.appendChild(preview);
+        previewContainer.appendChild(overlay);
+
         if (type === 'Software Project') {
-          document.getElementById('softwarePreviewContainer').appendChild(preview);
+          document.getElementById('softwarePreviewContainer').appendChild(previewContainer);
         } else {
-          document.getElementById('designPreviewContainer').appendChild(preview);
+          document.getElementById('designPreviewContainer').appendChild(previewContainer);
         }
 
         document.getElementById('projectTitle').value = '';
