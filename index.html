@@ -748,6 +748,7 @@
 
         // Validation
         if (!name || !email || !message) {
+          alert('Please fill in all required fields.');
           status.innerText = 'Please fill in all required fields.';
           status.style.color = 'red';
           status.classList.remove('hidden');
@@ -757,6 +758,7 @@
         // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
+          alert('Please enter a valid email address.');
           status.innerText = 'Please enter a valid email address.';
           status.style.color = 'red';
           status.classList.remove('hidden');
@@ -784,11 +786,13 @@
         emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
           .then(function(response) {
             console.log('SUCCESS!', response.status, response.text);
+            alert('Submitted! Your message has been sent successfully.');
             status.innerText = `Thank you ${name}! Your message about ${service} has been sent successfully. I will contact you at ${email} soon.`;
             status.style.color = 'green';
             document.getElementById('contactForm').reset();
           }, function(error) {
             console.log('FAILED...', error);
+            alert('Error: Message could not be sent. Please try again.');
             status.innerText = 'Sorry, there was an error sending your message. Please try again or contact me directly at airfrostunlimitedsoftwarenextg@gmail.com';
             status.style.color = 'red';
           })
@@ -843,15 +847,17 @@
             const adminLoginDiv = document.getElementById('adminLogin');
             const adminUploadDiv = document.getElementById('adminUpload');
 
-            if (adminLoginDiv && adminUploadDiv) {
               adminLoginDiv.classList.add('hidden');
               adminUploadDiv.classList.remove('hidden');
               isAdminLoggedIn = true;
+              alert('Admin access granted successfully!');
               showSuccessMessage('Admin access granted successfully!');
             } else {
+              alert('Admin interface error. Please refresh the page.');
               showErrorMessage('Admin interface elements not found.');
             }
           } else {
+            alert('Incorrect admin password. Access denied.');
             showErrorMessage('Incorrect admin password. Access denied.');
           }
         } catch (error) {
@@ -864,6 +870,7 @@
       function addProject() {
         try {
           if (!isAdminLoggedIn) {
+            alert('Admin access required. Please log in first.');
             showErrorMessage('Admin access required. Please log in first.');
             return;
           }
@@ -874,6 +881,7 @@
           const projectList = document.getElementById('projectList');
 
           if (!titleInput || !typeSelect || !fileInput || !projectList) {
+            alert('Form error. Please refresh the page.');
             showErrorMessage('Required form elements not found.');
             return;
           }
@@ -883,11 +891,13 @@
           const files = fileInput.files;
 
           if (!title) {
+            alert('Please enter a project title.');
             showErrorMessage('Please enter a project title.');
             return;
           }
 
           if (!files || files.length === 0) {
+            alert('Please select a project file.');
             showErrorMessage('Please select a project file.');
             return;
           }
@@ -896,12 +906,14 @@
           const maxSize = 10 * 1024 * 1024; // 10MB limit
 
           if (file.size > maxSize) {
+            alert('File size too large. Maximum size is 10MB.');
             showErrorMessage('File size too large. Maximum size is 10MB.');
             return;
           }
 
           const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/zip'];
           if (!allowedTypes.includes(file.type)) {
+            alert('File type not supported. Please use images, PDFs, or ZIP files.');
             showErrorMessage('File type not supported. Please use images, PDFs, or ZIP files.');
             return;
           }
@@ -951,6 +963,7 @@
           } else if (type === 'Graphic Design' && designContainer) {
             designContainer.appendChild(previewContainer);
           } else {
+            alert('Preview container error. Project added but preview may not display.');
             showErrorMessage('Preview container not found for selected project type.');
           }
 
@@ -958,6 +971,7 @@
           titleInput.value = '';
           fileInput.value = '';
 
+          alert(`Project "${title}" added successfully!`);
           showSuccessMessage(`Project "${title}" added successfully!`);
 
         } catch (error) {
@@ -983,6 +997,7 @@
 
       } catch (error) {
         console.error('Application initialization error:', error);
+        alert('Application error. Please refresh the page.');
         showErrorMessage('An error occurred while loading the application. Please refresh the page.');
       }
     });
@@ -990,12 +1005,14 @@
     // Global error handler
     window.addEventListener('error', function(e) {
       console.error('Global error:', e.error);
+      alert('An unexpected error occurred. Please refresh the page.');
       showErrorMessage('An unexpected error occurred. Please refresh the page.');
     });
 
     // Unhandled promise rejection handler
     window.addEventListener('unhandledrejection', function(e) {
       console.error('Unhandled promise rejection:', e.reason);
+      alert('A background process failed. Some features may not work properly.');
       showErrorMessage('A background process failed. Some features may not work properly.');
     });
   </script>
