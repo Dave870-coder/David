@@ -16,6 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -518,6 +519,7 @@
   <!-- Scripts -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      try {
       // Mobile menu functionality
       const mobileMenuBtn = document.getElementById('mobileMenuBtn');
       const mobileMenu = document.getElementById('mobileMenu');
@@ -552,45 +554,114 @@
         }
       });
 
-      // Anti-inspect functionality
+      // Enhanced Anti-inspect functionality
       document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
+        showWarningMessage('Right-click is disabled for security reasons.');
+        return false;
       });
 
       document.addEventListener('keydown', function(e) {
         // Disable F12
         if (e.key === 'F12') {
           e.preventDefault();
+          showWarningMessage('Developer tools are disabled.');
           return false;
         }
-        // Disable Ctrl+Shift+I (Chrome)
-        if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        // Disable Ctrl+Shift+I (Chrome, Firefox, Edge)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
           e.preventDefault();
+          showWarningMessage('Developer tools are disabled.');
           return false;
         }
-        // Disable Ctrl+Shift+C (Chrome)
-        if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        // Disable Ctrl+Shift+C (Chrome, Firefox, Edge)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
           e.preventDefault();
+          showWarningMessage('Developer tools are disabled.');
           return false;
         }
-        // Disable Ctrl+Shift+J (Chrome)
-        if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+        // Disable Ctrl+Shift+J (Chrome, Firefox, Edge)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
           e.preventDefault();
+          showWarningMessage('Developer tools are disabled.');
           return false;
         }
-        // Disable Ctrl+U (View Source)
-        if (e.ctrlKey && e.key === 'u') {
+        // Disable Ctrl+Shift+K (Firefox)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'K' || e.key === 'k')) {
           e.preventDefault();
+          showWarningMessage('Developer tools are disabled.');
+          return false;
+        }
+        // Disable Ctrl+U (View Source - All browsers)
+        if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+          e.preventDefault();
+          showWarningMessage('View source is disabled.');
+          return false;
+        }
+        // Disable F11 (Fullscreen, but can interfere with dev tools)
+        if (e.key === 'F11') {
+          // Allow F11 for legitimate fullscreen use, but monitor
+          return true;
+        }
+      });
+
+      // Disable right-click on images and other elements
+      document.querySelectorAll('img, video, audio, canvas, svg').forEach(element => {
+        element.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          showWarningMessage('Right-click is disabled on media elements.');
+          return false;
+        });
+      });
+
+      // Prevent drag and drop of images
+      document.addEventListener('dragstart', function(e) {
+        if (e.target.tagName === 'IMG') {
+          e.preventDefault();
+          showWarningMessage('Image dragging is disabled.');
           return false;
         }
       });
 
-      // Disable right-click on images
-      document.querySelectorAll('img').forEach(img => {
-        img.addEventListener('contextmenu', function(e) {
-          e.preventDefault();
-        });
+      // Prevent text selection on certain elements (optional)
+      document.addEventListener('selectstart', function(e) {
+        // Allow text selection on form inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.contentEditable === 'true') {
+          return true;
+        }
+        // Prevent selection on other elements for security
+        e.preventDefault();
+        return false;
       });
+
+      // Detect and prevent developer tools
+      let devtoolsOpen = false;
+      const threshold = 160;
+
+      setInterval(() => {
+        if (window.outerHeight - window.innerHeight > threshold || window.outerWidth - window.innerWidth > threshold) {
+          if (!devtoolsOpen) {
+            devtoolsOpen = true;
+            showWarningMessage('Developer tools detected. This action is not allowed.');
+            // Optional: redirect or take other action
+            // window.location.href = 'about:blank';
+          }
+        } else {
+          devtoolsOpen = false;
+        }
+      }, 500);
+
+      // Function to show warning messages
+      function showWarningMessage(message) {
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+        warningDiv.innerText = message;
+        document.body.appendChild(warningDiv);
+
+        setTimeout(() => {
+          warningDiv.remove();
+        }, 3000);
+      }
 
       // Generate daily seed for image rotation
       const today = new Date();
@@ -654,92 +725,278 @@
         });
       });
 
-      // Contact form
-      document.getElementById('contactForm').addEventListener('submit', e => {
+      // Initialize EmailJS with error handling
+      (function() {
+        try {
+          emailjs.init('YOUR_PUBLIC_KEY'); // Replace with your EmailJS public key
+        } catch (error) {
+          console.error('EmailJS initialization failed:', error);
+          showErrorMessage('Email service initialization failed. Contact form may not work properly.');
+        }
+      })();
+
+      // Contact form with EmailJS
+      document.getElementById('contactForm').addEventListener('submit', function(e) {
         e.preventDefault();
+
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const service = document.getElementById('service').value;
         const message = document.getElementById('message').value;
+        const status = document.getElementById('status');
+        const submitBtn = this.querySelector('button[type="submit"]');
 
+        // Validation
         if (!name || !email || !message) {
-          document.getElementById('status').innerText = 'Please fill in all required fields.';
-          document.getElementById('status').style.color = 'red';
+          status.innerText = 'Please fill in all required fields.';
+          status.style.color = 'red';
+          status.classList.remove('hidden');
           return;
         }
 
-        // Simulate sending (in a real app, this would send to a server)
-        document.getElementById('status').innerText = `Thank you ${name}! Your message about ${service} has been sent. I will contact you at ${email} soon.`;
-        document.getElementById('status').style.color = 'green';
-        document.getElementById('contactForm').reset();
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          status.innerText = 'Please enter a valid email address.';
+          status.style.color = 'red';
+          status.classList.remove('hidden');
+          return;
+        }
+
+        // Disable submit button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Sending...';
+        status.innerText = 'Sending your message...';
+        status.style.color = '#fbbf24'; // Yellow for loading
+        status.classList.remove('hidden');
+
+        // Prepare email parameters
+        const templateParams = {
+          from_name: name,
+          from_email: email,
+          service_type: service,
+          message: message,
+          to_email: 'airfrostunlimitedsoftwarenextg@gmail.com',
+          reply_to: email
+        };
+
+        // Send email using EmailJS
+        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+          .then(function(response) {
+            console.log('SUCCESS!', response.status, response.text);
+            status.innerText = `Thank you ${name}! Your message about ${service} has been sent successfully. I will contact you at ${email} soon.`;
+            status.style.color = 'green';
+            document.getElementById('contactForm').reset();
+          }, function(error) {
+            console.log('FAILED...', error);
+            status.innerText = 'Sorry, there was an error sending your message. Please try again or contact me directly at airfrostunlimitedsoftwarenextg@gmail.com';
+            status.style.color = 'red';
+          })
+          .finally(function() {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Send Message';
+          });
       });
+
+      // Success messages for navigation links
+      document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+          const href = this.getAttribute('href');
+          if (href !== '#') {
+            // Show success message for navigation
+            showSuccessMessage('Navigating to ' + href.substring(1) + ' section...');
+          }
+        });
+      });
+
+      // Function to show success messages
+      function showSuccessMessage(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+        successDiv.innerText = message;
+        document.body.appendChild(successDiv);
+
+        setTimeout(() => {
+          successDiv.remove();
+        }, 2000);
+      }
 
       let isAdminLoggedIn = false;
 
-      // Admin login
+      // Admin login with error handling
       function adminLogin() {
-        const pass = document.getElementById('adminPassword').value;
-        if (pass === 'admin123') {
-          document.getElementById('adminLogin').classList.add('hidden');
-          document.getElementById('adminUpload').classList.remove('hidden');
-          isAdminLoggedIn = true;
-        } else {
-          alert('Incorrect admin password');
+        try {
+          const passwordInput = document.getElementById('adminPassword');
+          if (!passwordInput) {
+            showErrorMessage('Admin password input not found.');
+            return;
+          }
+
+          const pass = passwordInput.value.trim();
+          if (!pass) {
+            showErrorMessage('Please enter the admin password.');
+            return;
+          }
+
+          if (pass === 'admin123') {
+            const adminLoginDiv = document.getElementById('adminLogin');
+            const adminUploadDiv = document.getElementById('adminUpload');
+
+            if (adminLoginDiv && adminUploadDiv) {
+              adminLoginDiv.classList.add('hidden');
+              adminUploadDiv.classList.remove('hidden');
+              isAdminLoggedIn = true;
+              showSuccessMessage('Admin access granted successfully!');
+            } else {
+              showErrorMessage('Admin interface elements not found.');
+            }
+          } else {
+            showErrorMessage('Incorrect admin password. Access denied.');
+          }
+        } catch (error) {
+          console.error('Admin login error:', error);
+          showErrorMessage('An error occurred during admin login. Please try again.');
         }
       }
 
-      // Add project
+      // Add project with comprehensive error handling
       function addProject() {
-        if (!isAdminLoggedIn) { alert('Admin must be logged in'); return; }
-        const title = document.getElementById('projectTitle').value;
-        const type = document.getElementById('projectType').value;
-        const fileInput = document.getElementById('projectFile');
-        if (!title || !fileInput.files.length) { alert('Provide title and file'); return; }
-        const fileURL = URL.createObjectURL(fileInput.files[0]);
+        try {
+          if (!isAdminLoggedIn) {
+            showErrorMessage('Admin access required. Please log in first.');
+            return;
+          }
 
-        // Portfolio card with enhanced styling
-        const card = document.createElement('div');
-        card.className = 'bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300';
-        card.innerHTML = `
-          <h4 class="text-xl font-bold mb-2">${title}</h4>
-          <p class="text-sm text-gray-500 mb-4">${type}</p>
-          <p class="text-gray-600 mb-4">Click to view the uploaded project file.</p>
-          <a href="${fileURL}" target="_blank" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors duration-200">View Project</a>
-        `;
-        document.getElementById('projectList').appendChild(card);
+          const titleInput = document.getElementById('projectTitle');
+          const typeSelect = document.getElementById('projectType');
+          const fileInput = document.getElementById('projectFile');
+          const projectList = document.getElementById('projectList');
 
-        // Add preview image to Services with hover effects
-        const previewContainer = document.createElement('div');
-        previewContainer.className = 'relative group cursor-pointer';
+          if (!titleInput || !typeSelect || !fileInput || !projectList) {
+            showErrorMessage('Required form elements not found.');
+            return;
+          }
 
-        const preview = document.createElement('img');
-        preview.src = fileURL;
-        preview.alt = title + ' Preview';
-        preview.className = 'w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105';
+          const title = titleInput.value.trim();
+          const type = typeSelect.value;
+          const files = fileInput.files;
 
-        const overlay = document.createElement('div');
-        overlay.className = 'absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center';
+          if (!title) {
+            showErrorMessage('Please enter a project title.');
+            return;
+          }
 
-        const label = document.createElement('span');
-        label.className = 'text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity';
-        label.textContent = title;
+          if (!files || files.length === 0) {
+            showErrorMessage('Please select a project file.');
+            return;
+          }
 
-        overlay.appendChild(label);
-        previewContainer.appendChild(preview);
-        previewContainer.appendChild(overlay);
+          const file = files[0];
+          const maxSize = 10 * 1024 * 1024; // 10MB limit
 
-        if (type === 'Software Project') {
-          document.getElementById('softwarePreviewContainer').appendChild(previewContainer);
-        } else {
-          document.getElementById('designPreviewContainer').appendChild(previewContainer);
+          if (file.size > maxSize) {
+            showErrorMessage('File size too large. Maximum size is 10MB.');
+            return;
+          }
+
+          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/zip'];
+          if (!allowedTypes.includes(file.type)) {
+            showErrorMessage('File type not supported. Please use images, PDFs, or ZIP files.');
+            return;
+          }
+
+          const fileURL = URL.createObjectURL(file);
+
+          // Portfolio card with enhanced styling
+          const card = document.createElement('div');
+          card.className = 'bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300';
+          card.innerHTML = `
+            <h4 class="text-xl font-bold mb-2">${title}</h4>
+            <p class="text-sm text-gray-500 mb-4">${type}</p>
+            <p class="text-gray-600 mb-4">Click to view the uploaded project file.</p>
+            <a href="${fileURL}" target="_blank" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors duration-200">View Project</a>
+          `;
+
+          projectList.appendChild(card);
+
+          // Add preview image to Services with hover effects
+          const previewContainer = document.createElement('div');
+          previewContainer.className = 'relative group cursor-pointer';
+
+          const preview = document.createElement('img');
+          preview.src = fileURL;
+          preview.alt = title + ' Preview';
+          preview.className = 'w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105';
+          preview.onerror = function() {
+            showErrorMessage('Failed to load preview image.');
+          };
+
+          const overlay = document.createElement('div');
+          overlay.className = 'absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center';
+
+          const label = document.createElement('span');
+          label.className = 'text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity';
+          label.textContent = title;
+
+          overlay.appendChild(label);
+          previewContainer.appendChild(preview);
+          previewContainer.appendChild(overlay);
+
+          const softwareContainer = document.getElementById('softwarePreviewContainer');
+          const designContainer = document.getElementById('designPreviewContainer');
+
+          if (type === 'Software Project' && softwareContainer) {
+            softwareContainer.appendChild(previewContainer);
+          } else if (type === 'Graphic Design' && designContainer) {
+            designContainer.appendChild(previewContainer);
+          } else {
+            showErrorMessage('Preview container not found for selected project type.');
+          }
+
+          // Clear form
+          titleInput.value = '';
+          fileInput.value = '';
+
+          showSuccessMessage(`Project "${title}" added successfully!`);
+
+        } catch (error) {
+          console.error('Add project error:', error);
+          showErrorMessage('An error occurred while adding the project. Please try again.');
         }
+      }
 
-        document.getElementById('projectTitle').value = '';
-        document.getElementById('projectFile').value = '';
+      // Error message function
+      function showErrorMessage(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+        errorDiv.innerText = message;
+        document.body.appendChild(errorDiv);
+
+        setTimeout(() => {
+          errorDiv.remove();
+        }, 4000);
       }
 
       document.getElementById('adminLoginBtn').addEventListener('click', adminLogin);
       document.getElementById('uploadProjectBtn').addEventListener('click', addProject);
+
+      } catch (error) {
+        console.error('Application initialization error:', error);
+        showErrorMessage('An error occurred while loading the application. Please refresh the page.');
+      }
+    });
+
+    // Global error handler
+    window.addEventListener('error', function(e) {
+      console.error('Global error:', e.error);
+      showErrorMessage('An unexpected error occurred. Please refresh the page.');
+    });
+
+    // Unhandled promise rejection handler
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error('Unhandled promise rejection:', e.reason);
+      showErrorMessage('A background process failed. Some features may not work properly.');
     });
   </script>
 
