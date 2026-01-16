@@ -23,12 +23,14 @@ Visit the live portfolio at: **https://dave870-coder.github.io/David/**
 
 ## Features
 
-- Responsive design that works on all devices
+- Responsive design that works on all devices (mobile, tablet, desktop)
+- Mobile-friendly navigation with hamburger menu
 - Smooth scrolling navigation
 - Interactive portfolio showcase
 - Contact form
 - Admin panel for project management
 - Dynamic image galleries
+- Security features to prevent browser inspection and right-click access
 
 ## Contact
 
