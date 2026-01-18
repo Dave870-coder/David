@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Portfolio - Onuoha Ikechukwu David</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="airfrost.png">
+    <style>
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .project-card { transition: all 0.3s ease; }
+        .project-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .filter-btn { transition: all 0.3s ease; }
+        .filter-btn.active { background-color: #3B82F6; color: white; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="airfrost.png" alt="Logo" class="w-10 h-10">
+                    <h1 class="text-2xl font-bold text-gray-900">Project Portfolio</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="project-stats" class="text-sm text-gray-600">
+                        <span id="total-projects">0</span> Projects
+                    </div>
+                    <a href="index.html" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                        Back to Portfolio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold mb-4">My Project Showcase</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Explore my latest projects, from software applications to graphic designs. Each project represents real-world solutions and creative work.</p>
+
+            <!-- Filter Buttons -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button class="filter-btn active px-6 py-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors" data-filter="all">
+                    All Projects
+                </button>
+                <button class="filter-btn px-6 py-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors" data-filter="Software Project">
+                    Software
+                </button>
+                <button class="filter-btn px-6 py-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors" data-filter="Web Application">
+                    Web Apps
+                </button>
+                <button class="filter-btn px-6 py-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors" data-filter="Mobile App">
+                    Mobile Apps
+                </button>
+                <button class="filter-btn px-6 py-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors" data-filter="Graphic Design">
+                    Graphic Design
+                </button>
+                <button class="filter-btn px-6 py-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors" data-filter="AI/ML Project">
+                    AI/ML
+                </button>
+                <button class="filter-btn px-6 py-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors" data-filter="Game Development">
+                    Games
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Grid -->
+    <main class="container mx-auto px-4 py-12">
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-16">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading projects...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-16">
+            <div class="text-6xl mb-4">📁</div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">No Projects Yet</h3>
+            <p class="text-gray-600 mb-6">Projects uploaded through the admin panel will appear here.</p>
+            <a href="index.html#projects" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                Back to Portfolio
+            </a>
+        </div>
+
+        <!-- Projects Container -->
+        <div id="projects-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Projects will be loaded here -->
+        </div>
+
+        <!-- Load More Button -->
+        <div id="load-more-container" class="text-center mt-12 hidden">
+            <button id="load-more-btn" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                Load More Projects
+            </button>
+        </div>
+    </main>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-90vh overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 id="modal-title" class="text-2xl font-bold text-gray-900"></h3>
+                        <p id="modal-category" class="text-blue-600 font-medium mt-1"></p>
+                    </div>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        ×
+                    </button>
+                </div>
+
+                <!-- Project Files -->
+                <div id="modal-files" class="mb-6">
+                    <h4 class="text-lg font-semibold mb-4">Project Files</h4>
+                    <div id="files-list" class="space-y-2">
+                        <!-- Files will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Project Description -->
+                <div id="modal-description" class="mb-6">
+                    <h4 class="text-lg font-semibold mb-2">Description</h4>
+                    <p class="text-gray-700"></p>
+                </div>
+
+                <!-- Project Metadata -->
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h5 class="font-semibold text-gray-900 mb-1">Upload Date</h5>
+                        <p id="modal-date" class="text-gray-600"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h5 class="font-semibold text-gray-900 mb-1">File Count</h5>
+                        <p id="modal-file-count" class="text-gray-600"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h5 class="font-semibold text-gray-900 mb-1">Total Size</h5>
+                        <p id="modal-size" class="text-gray-600"></p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-3">
+                    <button id="download-all-modal" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        Download All Files
+                    </button>
+                    <button id="view-demo-modal" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors hidden">
+                        View Live Demo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-gray-400">© 2026 Onuoha Ikechukwu David. All projects uploaded via admin panel.</p>
+        </div>
+    </footer>
+
+    <script>
+        let allProjects = [];
+        let filteredProjects = [];
+        let currentFilter = 'all';
+        let projectsPerPage = 9;
+        let currentPage = 1;
+
+        // DOM elements
+        const projectsContainer = document.getElementById('projects-container');
+        const loadingState = document.getElementById('loading-state');
+        const emptyState = document.getElementById('empty-state');
+        const loadMoreContainer = document.getElementById('load-more-container');
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const projectModal = document.getElementById('project-modal');
+        const closeModal = document.getElementById('close-modal');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const totalProjectsEl = document.getElementById('total-projects');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProjects();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Filter buttons
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const filter = e.target.dataset.filter;
+                    setActiveFilter(filter);
+                    filterProjects(filter);
+                    renderProjects();
+                });
+            });
+
+            // Modal
+            closeModal.addEventListener('click', () => {
+                projectModal.classList.add('hidden');
+            });
+
+            projectModal.addEventListener('click', (e) => {
+                if (e.target === projectModal) {
+                    projectModal.classList.add('hidden');
+                }
+            });
+
+            // Load more
+            loadMoreBtn.addEventListener('click', loadMoreProjects);
+
+            // Download all from modal
+            document.getElementById('download-all-modal').addEventListener('click', () => {
+                const projectData = JSON.parse(projectModal.dataset.projectData);
+                downloadAllFiles(projectData.title, projectData.files);
+            });
+        }
+
+        function loadProjects() {
+            loadingState.classList.remove('hidden');
+
+            // Load projects from localStorage (simulating admin uploads)
+            const adminTasks = JSON.parse(localStorage.getItem('taskflow-tasks')) || [];
+            const adminProjects = JSON.parse(localStorage.getItem('admin-projects')) || [];
+
+            // Combine and format projects
+            allProjects = [];
+
+            // Add admin-uploaded projects
+            adminProjects.forEach(project => {
+                if (project.files && project.files.length > 0) {
+                    allProjects.push({
+                        id: project.id || Date.now(),
+                        title: project.title,
+                        type: project.type,
+                        description: project.description || `A ${project.type.toLowerCase()} project`,
+                        files: project.files,
+                        uploadedAt: project.uploadedAt || new Date().toISOString(),
+                        source: 'admin'
+                    });
+                }
+            });
+
+            // Add sample projects for demonstration
+            if (allProjects.length === 0) {
+                allProjects = [
+                    {
+                        id: 1,
+                        title: "E-Commerce Platform",
+                        type: "Web Application",
+                        description: "A full-stack e-commerce solution with payment integration, shopping cart, and admin dashboard. Features product catalog, user authentication, and order management.",
+                        files: [
+                            { name: "index.html", url: "#", size: 245760 },
+                            { name: "styles.css", url: "#", size: 51200 },
+                            { name: "app.js", url: "#", size: 102400 }
+                        ],
+                        uploadedAt: "2024-01-15T10:00:00Z",
+                        source: 'demo'
+                    },
+                    {
+                        id: 2,
+                        title: "Brand Identity Package",
+                        type: "Graphic Design",
+                        description: "Complete brand identity including logo variations, color palette, typography, business cards, and social media templates.",
+                        files: [
+                            { name: "logo_primary.png", url: "#", size: 512000 },
+                            { name: "logo_dark.png", url: "#", size: 498000 },
+                            { name: "brand_guidelines.pdf", url: "#", size: 2048000 }
+                        ],
+                        uploadedAt: "2024-01-14T15:30:00Z",
+                        source: 'demo'
+                    },
+                    {
+                        id: 3,
+                        title: "Task Management App",
+                        type: "Software Project",
+                        description: "A collaborative task management application with real-time updates, team features, drag-and-drop kanban board, and progress tracking.",
+                        files: [
+                            { name: "taskapp.py", url: "#", size: 153600 },
+                            { name: "database.sql", url: "#", size: 25600 },
+                            { name: "README.md", url: "#", size: 12800 }
+                        ],
+                        uploadedAt: "2024-01-13T09:15:00Z",
+                        source: 'demo'
+                    },
+                    {
+                        id: 4,
+                        title: "Mobile Fitness Tracker",
+                        type: "Mobile App",
+                        description: "Cross-platform mobile application for fitness tracking with workout plans, progress analytics, and social features.",
+                        files: [
+                            { name: "FitnessTracker.apk", url: "#", size: 15728640 },
+                            { name: "ios_build.ipa", url: "#", size: 52428800 }
+                        ],
+                        uploadedAt: "2024-01-12T14:20:00Z",
+                        source: 'demo'
+                    },
+                    {
+                        id: 5,
+                        title: "AI Image Generator",
+                        type: "AI/ML Project",
+                        description: "Machine learning project using GANs to generate realistic images based on text descriptions and style transfer.",
+                        files: [
+                            { name: "model.py", url: "#", size: 307200 },
+                            { name: "training_data.zip", url: "#", size: 524288000 },
+                            { name: "requirements.txt", url: "#", size: 1024 }
+                        ],
+                        uploadedAt: "2024-01-11T11:45:00Z",
+                        source: 'demo'
+                    },
+                    {
+                        id: 6,
+                        title: "2D Platformer Game",
+                        type: "Game Development",
+                        description: "Complete 2D platformer game built with Unity, featuring multiple levels, power-ups, and leaderboard system.",
+                        files: [
+                            { name: "PlatformerGame.exe", url: "#", size: 104857600 },
+                            { name: "game_assets.zip", url: "#", size: 209715200 }
+                        ],
+                        uploadedAt: "2024-01-10T16:30:00Z",
+                        source: 'demo'
+                    }
+                ];
+            }
+
+            loadingState.classList.add('hidden');
+
+            if (allProjects.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            totalProjectsEl.textContent = allProjects.length;
+            filterProjects('all');
+            renderProjects();
+        }
+
+        function setActiveFilter(filter) {
+            filterBtns.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                }
+            });
+            currentFilter = filter;
+            currentPage = 1;
+        }
+
+        function filterProjects(filter) {
+            if (filter === 'all') {
+                filteredProjects = [...allProjects];
+            } else {
+                filteredProjects = allProjects.filter(project => project.type === filter);
+            }
+        }
+
+        function renderProjects() {
+            projectsContainer.innerHTML = '';
+
+            const startIndex = 0;
+            const endIndex = Math.min(currentPage * projectsPerPage, filteredProjects.length);
+            const projectsToShow = filteredProjects.slice(startIndex, endIndex);
+
+            projectsToShow.forEach(project => {
+                const projectCard = createProjectCard(project);
+                projectsContainer.appendChild(projectCard);
+            });
+
+            // Show/hide load more button
+            if (filteredProjects.length > endIndex) {
+                loadMoreContainer.classList.remove('hidden');
+            } else {
+                loadMoreContainer.classList.add('hidden');
+            }
+        }
+
+        function createProjectCard(project) {
+            const card = document.createElement('div');
+            card.className = 'project-card bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in';
+
+            const totalSize = project.files.reduce((sum, file) => sum + (file.size || 0), 0);
+            const formattedSize = formatFileSize(totalSize);
+            const uploadDate = new Date(project.uploadedAt).toLocaleDateString();
+
+            // Get project icon based on type
+            const projectIcons = {
+                'Software Project': '💻',
+                'Web Application': '🌐',
+                'Mobile App': '📱',
+                'Graphic Design': '🎨',
+                'AI/ML Project': '🤖',
+                'Game Development': '🎮',
+                'Database Project': '🗄️',
+                'API Development': '🔌',
+                'DevOps': '⚙️'
+            };
+
+            const icon = projectIcons[project.type] || '📁';
+
+            card.innerHTML = `
+                <div class="p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="text-4xl">${icon}</div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                            ${project.type}
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">${project.title}</h3>
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-3">${project.description}</p>
+
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                        <span>${project.files.length} files</span>
+                        <span>${formattedSize}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-6">
+                        <span>Uploaded: ${uploadDate}</span>
+                        <span class="capitalize">${project.source} upload</span>
+                    </div>
+
+                    <button onclick="viewProject(${project.id})" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105">
+                        View Project Details
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function loadMoreProjects() {
+            currentPage++;
+            renderProjects();
+        }
+
+        function viewProject(projectId) {
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+
+            // Populate modal
+            document.getElementById('modal-title').textContent = project.title;
+            document.getElementById('modal-category').textContent = project.type;
+
+            // Description
+            const descElement = document.getElementById('modal-description').querySelector('p');
+            descElement.textContent = project.description;
+
+            // Metadata
+            document.getElementById('modal-date').textContent = new Date(project.uploadedAt).toLocaleDateString();
+            document.getElementById('modal-file-count').textContent = project.files.length;
+            document.getElementById('modal-size').textContent = formatFileSize(project.files.reduce((sum, file) => sum + (file.size || 0), 0));
+
+            // Files list
+            const filesList = document.getElementById('files-list');
+            filesList.innerHTML = '';
+
+            project.files.forEach((file, index) => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0';
+
+                const fileIcon = getFileIcon(file.name);
+                const fileSize = formatFileSize(file.size || 0);
+
+                fileElement.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-lg">${fileIcon}</span>
+                        <span class="font-medium">${file.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm text-gray-500">${fileSize}</span>
+                        <button onclick="downloadFile('${file.url}', '${file.name}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Download
+                        </button>
+                    </div>
+                `;
+
+                filesList.appendChild(fileElement);
+            });
+
+            // Store project data for download all
+            projectModal.dataset.projectData = JSON.stringify({
+                title: project.title,
+                files: project.files
+            });
+
+            // Show/hide demo button based on project type
+            const demoBtn = document.getElementById('view-demo-modal');
+            if (project.type === 'Web Application' || project.title.toLowerCase().includes('e-commerce')) {
+                demoBtn.classList.remove('hidden');
+                demoBtn.onclick = () => {
+                    if (project.title.toLowerCase().includes('e-commerce')) {
+                        window.open('ecommerce.html', '_blank');
+                    } else if (project.title.toLowerCase().includes('task')) {
+                        window.open('task-management.html', '_blank');
+                    } else if (project.title.toLowerCase().includes('brand')) {
+                        window.open('brand-identity.html', '_blank');
+                    }
+                };
+            } else {
+                demoBtn.classList.add('hidden');
+            }
+
+            projectModal.classList.remove('hidden');
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const iconMap = {
+                'html': '🌐', 'css': '🎨', 'js': '📜', 'py': '🐍', 'java': '☕',
+                'cpp': '⚡', 'c': '🔧', 'php': '🐘', 'rb': '💎', 'go': '🐹',
+                'rs': '🦀', 'swift': '🦉', 'kt': '🎯', 'dart': '🎯', 'sql': '🗄️',
+                'json': '📋', 'xml': '📄', 'md': '📝', 'pdf': '📕', 'doc': '📄',
+                'docx': '📄', 'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🎞️',
+                'svg': '🎨', 'zip': '📦', 'rar': '📦', 'exe': '⚙️', 'apk': '📱'
+            };
+            return iconMap[ext] || '📄';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function downloadFile(url, filename) {
+            if (url === '#') {
+                showNotification('Demo file download not available', 'error');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showNotification(`Downloading ${filename}...`);
+        }
+
+        function downloadAllFiles(projectTitle, files) {
+            let downloaded = 0;
+            const total = files.length;
+
+            files.forEach((file, index) => {
+                setTimeout(() => {
+                    downloadFile(file.url, file.name);
+                    downloaded++;
+                    if (downloaded === total) {
+                        showNotification(`Downloaded all ${total} files for "${projectTitle}"`);
+                    }
+                }, index * 500); // Stagger downloads
+            });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in ${
+                type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Make functions global for onclick handlers
+        window.viewProject = viewProject;
+        window.downloadFile = downloadFile;
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">c:\Users\David\Downloads\Airfrost\projects.html
