@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management App - Onuoha Ikechukwu David</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="airfrost.png">
+    <style>
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .task-item { transition: all 0.3s ease; }
+        .task-item:hover { transform: translateY(-2px); }
+        .drag-over { background-color: rgba(59, 130, 246, 0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="airfrost.png" alt="Logo" class="w-10 h-10">
+                    <h1 class="text-2xl font-bold text-gray-900">TaskFlow Pro</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm text-gray-600">Team Online</span>
+                    </div>
+                    <button id="add-task-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        + New Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Dashboard Stats -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Total Tasks</p>
+                        <p id="total-tasks" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">In Progress</p>
+                        <p id="in-progress-tasks" class="text-2xl font-bold text-yellow-600">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Completed</p>
+                        <p id="completed-tasks" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Team Members</p>
+                        <p id="team-members" class="text-2xl font-bold text-purple-600">4</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Task Boards -->
+        <section class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- To Do Column -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">To Do</h3>
+                    <span id="todo-count" class="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-sm">0</span>
+                </div>
+                <div id="todo-column" class="space-y-3 min-h-96 task-drop-zone" data-status="todo">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-yellow-600">In Progress</h3>
+                    <span id="inprogress-count" class="bg-yellow-200 text-yellow-700 px-2 py-1 rounded-full text-sm">0</span>
+                </div>
+                <div id="inprogress-column" class="space-y-3 min-h-96 task-drop-zone" data-status="inprogress">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+
+            <!-- Review Column -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-blue-600">Review</h3>
+                    <span id="review-count" class="bg-blue-200 text-blue-700 px-2 py-1 rounded-full text-sm">0</span>
+                </div>
+                <div id="review-column" class="space-y-3 min-h-96 task-drop-zone" data-status="review">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+
+            <!-- Done Column -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-green-600">Done</h3>
+                    <span id="done-count" class="bg-green-200 text-green-700 px-2 py-1 rounded-full text-sm">0</span>
+                </div>
+                <div id="done-column" class="space-y-3 min-h-96 task-drop-zone" data-status="done">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Team Activity Feed -->
+        <section class="mt-8 bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">Team Activity</h3>
+            <div id="activity-feed" class="space-y-3 max-h-64 overflow-y-auto">
+                <div class="text-gray-500 text-center py-8">No recent activity</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-xl font-bold">Create New Task</h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                        <input type="text" id="task-title" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter task title">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="task-description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter task description"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                        <select id="task-priority" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
+                        <select id="task-assignee" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="john">John Doe</option>
+                            <option value="sarah">Sarah Wilson</option>
+                            <option value="mike">Mike Johnson</option>
+                            <option value="emma">Emma Davis</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                        <input type="date" id="task-due-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+                <div class="flex space-x-3 mt-6">
+                    <button id="cancel-task" class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="save-task" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                        Create Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Portfolio -->
+    <div class="fixed bottom-4 left-4">
+        <a href="index.html" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            <span>Back to Portfolio</span>
+        </a>
+    </div>
+
+    <script>
+        // Task management data
+        let tasks = JSON.parse(localStorage.getItem('taskflow-tasks')) || [];
+        let taskIdCounter = parseInt(localStorage.getItem('taskflow-counter')) || 1;
+
+        // DOM elements
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const taskModal = document.getElementById('task-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelTask = document.getElementById('cancel-task');
+        const saveTask = document.getElementById('save-task');
+        const taskTitle = document.getElementById('task-title');
+        const taskDescription = document.getElementById('task-description');
+        const taskPriority = document.getElementById('task-priority');
+        const taskAssignee = document.getElementById('task-assignee');
+        const taskDueDate = document.getElementById('task-due-date');
+        const activityFeed = document.getElementById('activity-feed');
+
+        // Team members
+        const teamMembers = {
+            john: { name: 'John Doe', avatar: '👨‍💼', color: 'blue' },
+            sarah: { name: 'Sarah Wilson', avatar: '👩‍💻', color: 'purple' },
+            mike: { name: 'Mike Johnson', avatar: '👨‍🔧', color: 'green' },
+            emma: { name: 'Emma Davis', avatar: '👩‍🎨', color: 'pink' }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTasks();
+            updateStats();
+            setupEventListeners();
+            setupDragAndDrop();
+        });
+
+        function setupEventListeners() {
+            // Modal controls
+            addTaskBtn.addEventListener('click', () => {
+                taskModal.classList.remove('hidden');
+                taskTitle.focus();
+            });
+
+            closeModal.addEventListener('click', closeTaskModal);
+            cancelTask.addEventListener('click', closeTaskModal);
+
+            saveTask.addEventListener('click', createTask);
+
+            // Close modal on outside click
+            taskModal.addEventListener('click', (e) => {
+                if (e.target === taskModal) {
+                    closeTaskModal();
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeTaskModal();
+                }
+            });
+        }
+
+        function setupDragAndDrop() {
+            const dropZones = document.querySelectorAll('.task-drop-zone');
+
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('drag-over');
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-over');
+                });
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+
+                    const taskId = e.dataTransfer.getData('text/plain');
+                    const newStatus = zone.dataset.status;
+
+                    updateTaskStatus(taskId, newStatus);
+                });
+            });
+        }
+
+        function createTask() {
+            const title = taskTitle.value.trim();
+            const description = taskDescription.value.trim();
+            const priority = taskPriority.value;
+            const assignee = taskAssignee.value;
+            const dueDate = taskDueDate.value;
+
+            if (!title) {
+                showNotification('Please enter a task title', 'error');
+                return;
+            }
+
+            const task = {
+                id: taskIdCounter++,
+                title,
+                description,
+                priority,
+                assignee,
+                dueDate,
+                status: 'todo',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            tasks.push(task);
+            saveTasks();
+
+            renderTask(task);
+            updateStats();
+            closeTaskModal();
+            addActivity(`Task "${title}" created and assigned to ${teamMembers[assignee].name}`);
+
+            showNotification('Task created successfully!');
+        }
+
+        function renderTask(task) {
+            const taskElement = document.createElement('div');
+            taskElement.className = 'task-item bg-gray-50 p-4 rounded-lg border cursor-move';
+            taskElement.draggable = true;
+            taskElement.dataset.taskId = task.id;
+
+            const priorityColors = {
+                low: 'bg-gray-200 text-gray-700',
+                medium: 'bg-yellow-200 text-yellow-700',
+                high: 'bg-orange-200 text-orange-700',
+                urgent: 'bg-red-200 text-red-700'
+            };
+
+            const assignee = teamMembers[task.assignee];
+
+            taskElement.innerHTML = `
+                <div class="flex items-start justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900 text-sm">${task.title}</h4>
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ${priorityColors[task.priority]}">
+                        ${task.priority}
+                    </span>
+                </div>
+                ${task.description ? `<p class="text-gray-600 text-xs mb-3 line-clamp-2">${task.description}</p>` : ''}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg">${assignee.avatar}</span>
+                        <span class="text-xs text-gray-600">${assignee.name}</span>
+                    </div>
+                    ${task.dueDate ? `<span class="text-xs text-gray-500">${formatDate(task.dueDate)}</span>` : ''}
+                </div>
+            `;
+
+            // Drag functionality
+            taskElement.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', task.id);
+                taskElement.classList.add('opacity-50');
+            });
+
+            taskElement.addEventListener('dragend', () => {
+                taskElement.classList.remove('opacity-50');
+            });
+
+            // Double click to edit
+            taskElement.addEventListener('dblclick', () => {
+                editTask(task.id);
+            });
+
+            // Get the appropriate column
+            const columnId = getColumnId(task.status);
+            const column = document.getElementById(columnId);
+            column.appendChild(taskElement);
+        }
+
+        function updateTaskStatus(taskId, newStatus) {
+            const task = tasks.find(t => t.id == taskId);
+            if (!task) return;
+
+            const oldStatus = task.status;
+            task.status = newStatus;
+            task.updatedAt = new Date().toISOString();
+
+            saveTasks();
+            updateStats();
+
+            // Move task element to new column
+            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+            if (taskElement) {
+                const newColumn = document.getElementById(getColumnId(newStatus));
+                newColumn.appendChild(taskElement);
+            }
+
+            addActivity(`Task "${task.title}" moved from ${oldStatus} to ${newStatus}`);
+            showNotification(`Task moved to ${newStatus}!`);
+        }
+
+        function editTask(taskId) {
+            const task = tasks.find(t => t.id == taskId);
+            if (!task) return;
+
+            // Populate modal with task data
+            taskTitle.value = task.title;
+            taskDescription.value = task.description;
+            taskPriority.value = task.priority;
+            taskAssignee.value = task.assignee;
+            taskDueDate.value = task.dueDate;
+
+            // Change save button to update
+            saveTask.textContent = 'Update Task';
+            saveTask.onclick = () => updateTask(taskId);
+
+            taskModal.classList.remove('hidden');
+        }
+
+        function updateTask(taskId) {
+            const task = tasks.find(t => t.id == taskId);
+            if (!task) return;
+
+            task.title = taskTitle.value.trim();
+            task.description = taskDescription.value.trim();
+            task.priority = taskPriority.value;
+            task.assignee = taskAssignee.value;
+            task.dueDate = taskDueDate.value;
+            task.updatedAt = new Date().toISOString();
+
+            saveTasks();
+            loadTasks(); // Re-render all tasks
+            closeTaskModal();
+
+            addActivity(`Task "${task.title}" updated`);
+            showNotification('Task updated successfully!');
+        }
+
+        function loadTasks() {
+            // Clear all columns
+            document.getElementById('todo-column').innerHTML = '';
+            document.getElementById('inprogress-column').innerHTML = '';
+            document.getElementById('review-column').innerHTML = '';
+            document.getElementById('done-column').innerHTML = '';
+
+            // Render all tasks
+            tasks.forEach(task => renderTask(task));
+        }
+
+        function updateStats() {
+            const total = tasks.length;
+            const inProgress = tasks.filter(t => t.status === 'inprogress').length;
+            const completed = tasks.filter(t => t.status === 'done').length;
+
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('in-progress-tasks').textContent = inProgress;
+            document.getElementById('completed-tasks').textContent = completed;
+            document.getElementById('team-members').textContent = Object.keys(teamMembers).length;
+
+            // Update column counts
+            document.getElementById('todo-count').textContent = tasks.filter(t => t.status === 'todo').length;
+            document.getElementById('inprogress-count').textContent = tasks.filter(t => t.status === 'inprogress').length;
+            document.getElementById('review-count').textContent = tasks.filter(t => t.status === 'review').length;
+            document.getElementById('done-count').textContent = tasks.filter(t => t.status === 'done').length;
+        }
+
+        function getColumnId(status) {
+            const columnMap = {
+                todo: 'todo-column',
+                inprogress: 'inprogress-column',
+                review: 'review-column',
+                done: 'done-column'
+            };
+            return columnMap[status] || 'todo-column';
+        }
+
+        function addActivity(message) {
+            const activityElement = document.createElement('div');
+            activityElement.className = 'flex items-center space-x-3 py-2 border-b border-gray-100 last:border-b-0 animate-fade-in';
+            activityElement.innerHTML = `
+                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span class="text-sm text-gray-600">${message}</span>
+                <span class="text-xs text-gray-400 ml-auto">${new Date().toLocaleTimeString()}</span>
+            `;
+
+            activityFeed.insertBefore(activityElement, activityFeed.firstChild);
+
+            // Keep only last 10 activities
+            while (activityFeed.children.length > 10) {
+                activityFeed.removeChild(activityFeed.lastChild);
+            }
+        }
+
+        function closeTaskModal() {
+            taskModal.classList.add('hidden');
+            taskTitle.value = '';
+            taskDescription.value = '';
+            taskPriority.value = 'medium';
+            taskAssignee.value = 'john';
+            taskDueDate.value = '';
+            saveTask.textContent = 'Create Task';
+            saveTask.onclick = createTask;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        function saveTasks() {
+            localStorage.setItem('taskflow-tasks', JSON.stringify(tasks));
+            localStorage.setItem('taskflow-counter', taskIdCounter);
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in ${
+                type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Add some sample tasks for demonstration
+        if (tasks.length === 0) {
+            const sampleTasks = [
+                {
+                    id: taskIdCounter++,
+                    title: 'Design new landing page',
+                    description: 'Create wireframes and mockups for the new marketing landing page',
+                    priority: 'high',
+                    assignee: 'emma',
+                    dueDate: '2024-02-15',
+                    status: 'inprogress',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    id: taskIdCounter++,
+                    title: 'Implement user authentication',
+                    description: 'Add login and registration functionality to the web app',
+                    priority: 'urgent',
+                    assignee: 'john',
+                    dueDate: '2024-02-10',
+                    status: 'review',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    id: taskIdCounter++,
+                    title: 'Database optimization',
+                    description: 'Improve query performance and add proper indexing',
+                    priority: 'medium',
+                    assignee: 'mike',
+                    dueDate: '2024-02-20',
+                    status: 'todo',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            ];
+
+            tasks = sampleTasks;
+            saveTasks();
+        }
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">c:\Users\David\Downloads\Airfrost\task-management.html

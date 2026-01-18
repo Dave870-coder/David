@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Platform - Onuoha Ikechukwu David</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" sizes="32x32" href="airfrost.png">
+    <style>
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="airfrost.png" alt="Logo" class="w-10 h-10">
+                    <h1 class="text-2xl font-bold text-gray-900">ShopHub</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                        <button id="cart-btn" class="text-gray-600 hover:text-gray-900">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13l-1.1 5M7 13h10m0 0v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <span id="user-info" class="text-sm text-gray-600">Welcome, Guest</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Shopping Cart</h2>
+                <button id="close-cart" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="cart-items" class="space-y-4 max-h-96 overflow-y-auto">
+                <!-- Cart items will be added here -->
+            </div>
+            <div id="cart-total" class="border-t pt-4 mt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-semibold">Total: $<span id="total-amount">0.00</span></span>
+                </div>
+                <button id="checkout-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>
+                    Proceed to Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Hero Section -->
+        <section class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-8 mb-8 text-center">
+            <h2 class="text-4xl font-bold mb-4">Welcome to ShopHub</h2>
+            <p class="text-xl mb-6">Discover amazing products at unbeatable prices</p>
+            <div class="flex justify-center space-x-4">
+                <input type="text" id="search-input" placeholder="Search products..." class="px-4 py-2 rounded-lg text-gray-900 w-64">
+                <button id="search-btn" class="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    Search
+                </button>
+            </div>
+        </section>
+
+        <!-- Categories -->
+        <section class="mb-8">
+            <h3 class="text-2xl font-bold mb-6">Shop by Category</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button class="category-btn bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-center" data-category="all">
+                    <div class="text-3xl mb-2">🛍️</div>
+                    <div class="font-semibold">All Products</div>
+                </button>
+                <button class="category-btn bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-center" data-category="electronics">
+                    <div class="text-3xl mb-2">📱</div>
+                    <div class="font-semibold">Electronics</div>
+                </button>
+                <button class="category-btn bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-center" data-category="clothing">
+                    <div class="text-3xl mb-2">👕</div>
+                    <div class="font-semibold">Clothing</div>
+                </button>
+                <button class="category-btn bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow text-center" data-category="home">
+                    <div class="text-3xl mb-2">🏠</div>
+                    <div class="font-semibold">Home & Garden</div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Products Grid -->
+        <section>
+            <h3 class="text-2xl font-bold mb-6">Featured Products</h3>
+            <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Products will be loaded here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-90vh overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 id="modal-title" class="text-2xl font-bold"></h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <img id="modal-image" src="" alt="" class="w-full rounded-lg">
+                    </div>
+                    <div>
+                        <p id="modal-description" class="text-gray-600 mb-4"></p>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-3xl font-bold text-green-600">$<span id="modal-price"></span></span>
+                            <span class="text-sm text-gray-500">In Stock</span>
+                        </div>
+                        <div class="flex items-center space-x-4 mb-6">
+                            <label class="font-semibold">Quantity:</label>
+                            <input type="number" id="quantity-input" min="1" value="1" class="w-20 px-3 py-2 border rounded-lg">
+                        </div>
+                        <button id="add-to-cart-modal" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Portfolio -->
+    <div class="fixed bottom-4 left-4">
+        <a href="index.html" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            <span>Back to Portfolio</span>
+        </a>
+    </div>
+
+    <script>
+        // Sample products data
+        const products = [
+            {
+                id: 1,
+                name: "Wireless Bluetooth Headphones",
+                price: 89.99,
+                category: "electronics",
+                image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
+                description: "High-quality wireless headphones with noise cancellation and 30-hour battery life."
+            },
+            {
+                id: 2,
+                name: "Smart Watch Series X",
+                price: 299.99,
+                category: "electronics",
+                image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
+                description: "Advanced smartwatch with health monitoring, GPS, and cellular connectivity."
+            },
+            {
+                id: 3,
+                name: "Cotton T-Shirt",
+                price: 24.99,
+                category: "clothing",
+                image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400",
+                description: "Comfortable 100% cotton t-shirt available in multiple colors and sizes."
+            },
+            {
+                id: 4,
+                name: "Modern Sofa",
+                price: 899.99,
+                category: "home",
+                image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400",
+                description: "Elegant modern sofa with premium upholstery and sturdy construction."
+            },
+            {
+                id: 5,
+                name: "Gaming Laptop",
+                price: 1299.99,
+                category: "electronics",
+                image: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400",
+                description: "High-performance gaming laptop with RTX graphics and fast SSD storage."
+            },
+            {
+                id: 6,
+                name: "Designer Jeans",
+                price: 79.99,
+                category: "clothing",
+                image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400",
+                description: "Premium designer jeans with perfect fit and durable denim material."
+            },
+            {
+                id: 7,
+                name: "Coffee Maker",
+                price: 149.99,
+                category: "home",
+                image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400",
+                description: "Programmable coffee maker with thermal carafe and multiple brew settings."
+            },
+            {
+                id: 8,
+                name: "Wireless Earbuds",
+                price: 159.99,
+                category: "electronics",
+                image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400",
+                description: "Premium wireless earbuds with active noise cancellation and premium sound."
+            }
+        ];
+
+        let cart = [];
+        let currentCategory = 'all';
+
+        // DOM elements
+        const productsGrid = document.getElementById('products-grid');
+        const cartBtn = document.getElementById('cart-btn');
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const closeCart = document.getElementById('close-cart');
+        const cartItems = document.getElementById('cart-items');
+        const cartCount = document.getElementById('cart-count');
+        const totalAmount = document.getElementById('total-amount');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const productModal = document.getElementById('product-modal');
+        const closeModal = document.getElementById('close-modal');
+        const addToCartModal = document.getElementById('add-to-cart-modal');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProducts();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Cart toggle
+            cartBtn.addEventListener('click', () => {
+                cartSidebar.classList.toggle('translate-x-full');
+            });
+
+            closeCart.addEventListener('click', () => {
+                cartSidebar.classList.add('translate-x-full');
+            });
+
+            // Search
+            searchBtn.addEventListener('click', searchProducts);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchProducts();
+            });
+
+            // Categories
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    currentCategory = e.target.closest('.category-btn').dataset.category;
+                    categoryBtns.forEach(b => b.classList.remove('ring-2', 'ring-blue-500'));
+                    e.target.closest('.category-btn').classList.add('ring-2', 'ring-blue-500');
+                    loadProducts();
+                });
+            });
+
+            // Modal
+            closeModal.addEventListener('click', () => {
+                productModal.classList.add('hidden');
+            });
+
+            addToCartModal.addEventListener('click', () => {
+                const productId = parseInt(productModal.dataset.productId);
+                const quantity = parseInt(document.getElementById('quantity-input').value);
+                addToCart(productId, quantity);
+                productModal.classList.add('hidden');
+            });
+
+            // Close modal on outside click
+            productModal.addEventListener('click', (e) => {
+                if (e.target === productModal) {
+                    productModal.classList.add('hidden');
+                }
+            });
+        }
+
+        function loadProducts(searchTerm = '') {
+            productsGrid.innerHTML = '';
+
+            let filteredProducts = products;
+
+            // Filter by category
+            if (currentCategory !== 'all') {
+                filteredProducts = filteredProducts.filter(p => p.category === currentCategory);
+            }
+
+            // Filter by search term
+            if (searchTerm) {
+                filteredProducts = filteredProducts.filter(p =>
+                    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    p.description.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+
+            filteredProducts.forEach(product => {
+                const productCard = createProductCard(product);
+                productsGrid.appendChild(productCard);
+            });
+        }
+
+        function createProductCard(product) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden animate-fade-in';
+            card.innerHTML = `
+                <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <h4 class="text-lg font-semibold mb-2">${product.name}</h4>
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">${product.description}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl font-bold text-green-600">$${product.price}</span>
+                        <button onclick="viewProduct(${product.id})" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function viewProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('modal-title').textContent = product.name;
+            document.getElementById('modal-image').src = product.image;
+            document.getElementById('modal-description').textContent = product.description;
+            document.getElementById('modal-price').textContent = product.price;
+            document.getElementById('quantity-input').value = 1;
+            productModal.dataset.productId = productId;
+
+            productModal.classList.remove('hidden');
+        }
+
+        function addToCart(productId, quantity = 1) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image: product.image,
+                    quantity: quantity
+                });
+            }
+
+            updateCart();
+            showNotification(`Added ${quantity} ${product.name} to cart!`);
+        }
+
+        function updateCart() {
+            cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartItems.innerHTML = '';
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="text-gray-500 text-center py-8">Your cart is empty</p>';
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            cart.forEach((item, index) => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0';
+                itemElement.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-lg">
+                    <div class="flex-1">
+                        <h4 class="font-semibold">${item.name}</h4>
+                        <p class="text-gray-600">$${item.price} × ${item.quantity}</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="updateQuantity(${index}, -1)" class="text-gray-500 hover:text-gray-700">-</button>
+                        <span>${item.quantity}</span>
+                        <button onclick="updateQuantity(${index}, 1)" class="text-gray-500 hover:text-gray-700">+</button>
+                        <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700 ml-2">×</button>
+                    </div>
+                `;
+                cartItems.appendChild(itemElement);
+            });
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            totalAmount.textContent = total.toFixed(2);
+            checkoutBtn.disabled = false;
+        }
+
+        function updateQuantity(index, change) {
+            cart[index].quantity += change;
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCart();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+
+        function searchProducts() {
+            const searchTerm = searchInput.value.trim();
+            loadProducts(searchTerm);
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Checkout functionality
+        checkoutBtn.addEventListener('click', () => {
+            if (cart.length === 0) return;
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            alert(`Checkout successful! Total: $${total.toFixed(2)}\n\nThank you for shopping with ShopHub!`);
+            cart = [];
+            updateCart();
+            cartSidebar.classList.add('translate-x-full');
+        });
+
+        // Make functions global for onclick handlers
+        window.viewProduct = viewProduct;
+        window.updateQuantity = updateQuantity;
+        window.removeFromCart = removeFromCart;
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">c:\Users\David\Downloads\Airfrost\ecommerce.html
