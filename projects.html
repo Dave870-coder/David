@@ -238,7 +238,12 @@
                         title: project.title,
                         type: project.type,
                         description: project.description || `A ${project.type.toLowerCase()} project`,
-                        files: project.files,
+                        files: project.files.map(file => ({
+                            name: file.name,
+                            url: file.dataUrl || file.url || '#',
+                            size: file.size || 0,
+                            type: file.type || 'Unknown'
+                        })),
                         uploadedAt: project.uploadedAt || new Date().toISOString(),
                         source: 'admin'
                     });
@@ -464,6 +469,7 @@
 
                 const fileIcon = getFileIcon(file.name);
                 const fileSize = formatFileSize(file.size || 0);
+                const isDownloadable = file.url && file.url !== '#';
 
                 fileElement.innerHTML = `
                     <div class="flex items-center space-x-3">
@@ -472,8 +478,10 @@
                     </div>
                     <div class="flex items-center space-x-3">
                         <span class="text-sm text-gray-500">${fileSize}</span>
-                        <button onclick="downloadFile('${file.url}', '${file.name}')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                            Download
+                        <button onclick="downloadFile('${file.url || '#'}', '${file.name}')"
+                                class="text-blue-600 hover:text-blue-800 text-sm font-medium ${isDownloadable ? '' : 'opacity-50 cursor-not-allowed'}"
+                                ${isDownloadable ? '' : 'disabled'}>
+                            ${isDownloadable ? 'Download' : 'N/A'}
                         </button>
                     </div>
                 `;
@@ -529,48 +537,149 @@
         }
 
         function downloadFile(url, filename) {
-            if (url === '#') {
-                showNotification('Demo file download not available', 'error');
-                return;
+            try {
+                if (url === '#') {
+                    showNotification('Demo file download not available', 'error');
+                    return;
+                }
+
+                showNotification(`Preparing download for ${filename}...`, 'warning');
+
+                // Handle data URLs (base64 encoded files)
+                if (url.startsWith('data:')) {
+                    // Convert data URL to blob for download
+                    fetch(url)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const blobUrl = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.download = filename;
+                            link.style.display = 'none';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+
+                            // Clean up blob URL after download
+                            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+
+                            showNotification(`Downloaded ${filename} successfully!`);
+                        })
+                        .catch(error => {
+                            console.error('Download error:', error);
+                            showNotification(`Failed to download ${filename}`, 'error');
+                        });
+                } else {
+                    // Handle regular URLs
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    showNotification(`Downloaded ${filename} successfully!`);
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification(`Failed to download ${filename}`, 'error');
             }
-
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            showNotification(`Downloading ${filename}...`);
         }
 
         function downloadAllFiles(projectTitle, files) {
+            if (!files || files.length === 0) {
+                showNotification('No files to download', 'error');
+                return;
+            }
+
             let downloaded = 0;
+            let failed = 0;
             const total = files.length;
+
+            showNotification(`Starting download of ${total} files...`);
 
             files.forEach((file, index) => {
                 setTimeout(() => {
-                    downloadFile(file.url, file.name);
-                    downloaded++;
-                    if (downloaded === total) {
-                        showNotification(`Downloaded all ${total} files for "${projectTitle}"`);
+                    try {
+                        if (file.url === '#') {
+                            failed++;
+                            if (downloaded + failed === total) {
+                                showNotification(`Downloaded ${downloaded}/${total} files. ${failed} failed.`, failed > 0 ? 'error' : 'success');
+                            }
+                            return;
+                        }
+
+                        // Handle data URLs
+                        if (file.url.startsWith('data:')) {
+                            fetch(file.url)
+                                .then(res => res.blob())
+                                .then(blob => {
+                                    const blobUrl = URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = blobUrl;
+                                    link.download = file.name;
+                                    link.style.display = 'none';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+
+                                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                                    downloaded++;
+
+                                    if (downloaded + failed === total) {
+                                        showNotification(`Downloaded ${downloaded}/${total} files for "${projectTitle}"${failed > 0 ? `. ${failed} failed.` : ''}`, failed > 0 ? 'error' : 'success');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Download error for', file.name, error);
+                                    failed++;
+                                    if (downloaded + failed === total) {
+                                        showNotification(`Downloaded ${downloaded}/${total} files for "${projectTitle}". ${failed} failed.`, 'error');
+                                    }
+                                });
+                        } else {
+                            // Handle regular URLs
+                            const link = document.createElement('a');
+                            link.href = file.url;
+                            link.download = file.name;
+                            link.style.display = 'none';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            downloaded++;
+
+                            if (downloaded + failed === total) {
+                                showNotification(`Downloaded ${downloaded}/${total} files for "${projectTitle}"${failed > 0 ? `. ${failed} failed.` : ''}`, failed > 0 ? 'error' : 'success');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Download error for', file.name, error);
+                        failed++;
+                        if (downloaded + failed === total) {
+                            showNotification(`Downloaded ${downloaded}/${total} files for "${projectTitle}". ${failed} failed.`, 'error');
+                        }
                     }
-                }, index * 500); // Stagger downloads
+                }, index * 1000); // Stagger downloads by 1 second to avoid browser limits
             });
         }
 
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
             notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in ${
-                type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                type === 'error' ? 'bg-red-500 text-white' : type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'
             }`;
-            notification.textContent = message;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <span>${message}</span>
+                    ${type === 'warning' ? '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>' : ''}
+                </div>
+            `;
             document.body.appendChild(notification);
 
             setTimeout(() => {
                 notification.remove();
-            }, 3000);
+            }, type === 'warning' ? 5000 : 3000);
         }
 
         // Make functions global for onclick handlers
