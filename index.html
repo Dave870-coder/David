@@ -351,10 +351,21 @@
         <div class="space-y-3 xs:space-y-4">
           <input type="text" id="projectTitle" placeholder="Project Title" class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base" />
           <select id="projectType" class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base">
-            <option>Software Project</option>
-            <option>Graphic Design</option>
+            <option value="Software Project">Software Project</option>
+            <option value="Graphic Design">Graphic Design</option>
+            <option value="Web Application">Web Application</option>
+            <option value="Mobile App">Mobile App</option>
+            <option value="Database Project">Database Project</option>
+            <option value="AI/ML Project">AI/ML Project</option>
+            <option value="Game Development">Game Development</option>
+            <option value="API Development">API Development</option>
+            <option value="DevOps">DevOps</option>
+            <option value="Other">Other</option>
           </select>
-          <input type="file" id="projectFile" class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors file:mr-3 xs:file:mr-4 file:py-2 file:px-3 xs:file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+          <input type="file" id="projectFile" multiple class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors file:mr-3 xs:file:mr-4 file:py-2 file:px-3 xs:file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+          <div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-lg">
+            <strong>Supported file types:</strong> All programming languages, images, documents, archives, and media files (Max: 50MB per file)
+          </div>
           <button id="uploadProjectBtn" class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Upload Project</button>
         </div>
       </div>
@@ -887,86 +898,181 @@
           }
 
           if (!files || files.length === 0) {
-            alert('Please select a project file.');
-            showErrorMessage('Please select a project file.');
+            alert('Please select project file(s).');
+            showErrorMessage('Please select project file(s).');
             return;
           }
 
-          const file = files[0];
-          const maxSize = 10 * 1024 * 1024; // 10MB limit
+          // Expanded file type support for all programming languages and file types
+          const allowedExtensions = [
+            // Programming Languages
+            '.js', '.ts', '.py', '.java', '.cpp', '.c', '.cs', '.php', '.rb', '.go', '.rs', '.swift', '.kt', '.scala', '.dart',
+            '.html', '.css', '.scss', '.sass', '.less', '.xml', '.json', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf',
+            // Web Technologies
+            '.vue', '.jsx', '.tsx', '.svelte', '.astro', '.ejs', '.hbs', '.pug', '.jade',
+            // Mobile Development
+            '.apk', '.ipa', '.aab',
+            // Databases
+            '.sql', '.db', '.sqlite', '.mongodb',
+            // AI/ML
+            '.ipynb', '.pkl', '.h5', '.pb', '.onnx', '.tflite',
+            // Game Development
+            '.unity', '.godot', '.unreal',
+            // DevOps
+            '.dockerfile', '.yml', '.yaml', '.sh', '.ps1', '.bat', '.md',
+            // Documents and Archives
+            '.pdf', '.doc', '.docx', '.txt', '.md', '.zip', '.rar', '.7z', '.tar', '.gz',
+            // Images and Media
+            '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico', '.mp4', '.avi', '.mov', '.mp3', '.wav'
+          ];
 
-          if (file.size > maxSize) {
-            alert('File size too large. Maximum size is 10MB.');
-            showErrorMessage('File size too large. Maximum size is 10MB.');
-            return;
+          const maxSize = 50 * 1024 * 1024; // 50MB limit per file
+          const uploadedFiles = [];
+
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            if (file.size > maxSize) {
+              alert(`File "${file.name}" is too large. Maximum size is 50MB per file.`);
+              showErrorMessage(`File "${file.name}" is too large. Maximum size is 50MB per file.`);
+              return;
+            }
+
+            const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+            const isAllowedType = allowedExtensions.includes(fileExtension) ||
+                                 file.type.startsWith('text/') ||
+                                 file.type.startsWith('image/') ||
+                                 file.type.startsWith('video/') ||
+                                 file.type.startsWith('audio/') ||
+                                 file.type.includes('pdf') ||
+                                 file.type.includes('zip') ||
+                                 file.type.includes('document');
+
+            if (!isAllowedType) {
+              alert(`File type "${fileExtension}" not supported for "${file.name}". Please use supported file types.`);
+              showErrorMessage(`File type "${fileExtension}" not supported for "${file.name}".`);
+              return;
+            }
+
+            uploadedFiles.push({
+              file: file,
+              url: URL.createObjectURL(file),
+              name: file.name,
+              size: file.size,
+              type: file.type || 'Unknown'
+            });
           }
 
-          const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/zip'];
-          if (!allowedTypes.includes(file.type)) {
-            alert('File type not supported. Please use images, PDFs, or ZIP files.');
-            showErrorMessage('File type not supported. Please use images, PDFs, or ZIP files.');
-            return;
-          }
-
-          const fileURL = URL.createObjectURL(file);
-
-          // Portfolio card with enhanced styling
+          // Create project card with file information
           const card = document.createElement('div');
-          card.className = 'bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300';
+          card.className = 'bg-white p-6 rounded-2xl shadow hover:shadow-xl transition-shadow duration-300 border border-gray-100';
+
+          let fileListHTML = '';
+          uploadedFiles.forEach((fileInfo, index) => {
+            const fileSizeMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+            fileListHTML += `
+              <div class="flex items-center justify-between py-1 border-b border-gray-100 last:border-b-0">
+                <span class="text-sm text-gray-600 truncate">${fileInfo.name}</span>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs text-gray-500">${fileSizeMB}MB</span>
+                  <a href="${fileInfo.url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs font-medium">View</a>
+                </div>
+              </div>
+            `;
+          });
+
           card.innerHTML = `
-            <h4 class="text-xl font-bold mb-2">${title}</h4>
-            <p class="text-sm text-gray-500 mb-4">${type}</p>
-            <p class="text-gray-600 mb-4">Click to view the uploaded project file.</p>
-            <a href="${fileURL}" target="_blank" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors duration-200">View Project</a>
+            <div class="flex items-start justify-between mb-3">
+              <h4 class="text-xl font-bold text-gray-900">${title}</h4>
+              <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">${type}</span>
+            </div>
+            <div class="mb-4">
+              <p class="text-sm text-gray-600 mb-2">Files (${uploadedFiles.length}):</p>
+              <div class="max-h-32 overflow-y-auto bg-gray-50 rounded-lg p-2">
+                ${fileListHTML}
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-500">Total: ${(uploadedFiles.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)).toFixed(2)}MB</span>
+              <button onclick="downloadAllFiles('${title}', ${JSON.stringify(uploadedFiles.map(f => ({name: f.name, url: f.url}))).replace(/"/g, '&quot;')})"
+                      class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors">
+                Download All
+              </button>
+            </div>
           `;
 
           projectList.appendChild(card);
 
-          // Add preview image to Services with hover effects
-          const previewContainer = document.createElement('div');
-          previewContainer.className = 'relative group cursor-pointer';
+          // Add preview images to Services section for visual projects
+          if (type === 'Graphic Design' || type === 'Web Application' || type === 'Mobile App') {
+            const imageFiles = uploadedFiles.filter(f =>
+              f.type.startsWith('image/') ||
+              f.name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+            );
 
-          const preview = document.createElement('img');
-          preview.src = fileURL;
-          preview.alt = title + ' Preview';
-          preview.className = 'w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105';
-          preview.onerror = function() {
-            showErrorMessage('Failed to load preview image.');
-          };
+            if (imageFiles.length > 0) {
+              const previewContainer = document.createElement('div');
+              previewContainer.className = 'relative group cursor-pointer';
 
-          const overlay = document.createElement('div');
-          overlay.className = 'absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center';
+              const preview = document.createElement('img');
+              preview.src = imageFiles[0].url;
+              preview.alt = title + ' Preview';
+              preview.className = 'w-full h-32 object-cover rounded-lg shadow-md transition-transform group-hover:scale-105';
+              preview.onerror = function() {
+                showErrorMessage('Failed to load preview image.');
+              };
 
-          const label = document.createElement('span');
-          label.className = 'text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity';
-          label.textContent = title;
+              const overlay = document.createElement('div');
+              overlay.className = 'absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center';
 
-          overlay.appendChild(label);
-          previewContainer.appendChild(preview);
-          previewContainer.appendChild(overlay);
+              const label = document.createElement('span');
+              label.className = 'text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity';
+              label.textContent = `${title} (${uploadedFiles.length} files)`;
 
-          const softwareContainer = document.getElementById('softwarePreviewContainer');
-          const designContainer = document.getElementById('designPreviewContainer');
+              overlay.appendChild(label);
+              previewContainer.appendChild(preview);
+              previewContainer.appendChild(overlay);
 
-          if (type === 'Software Project' && softwareContainer) {
-            softwareContainer.appendChild(previewContainer);
-          } else if (type === 'Graphic Design' && designContainer) {
-            designContainer.appendChild(previewContainer);
-          } else {
-            alert('Preview container error. Project added but preview may not display.');
-            showErrorMessage('Preview container not found for selected project type.');
+              const designContainer = document.getElementById('designPreviewContainer');
+              const softwareContainer = document.getElementById('softwarePreviewContainer');
+
+              if ((type === 'Graphic Design' || type === 'Web Application' || type === 'Mobile App') && designContainer) {
+                designContainer.appendChild(previewContainer);
+              } else if (softwareContainer) {
+                softwareContainer.appendChild(previewContainer);
+              }
+            }
           }
 
           // Clear form
           titleInput.value = '';
           fileInput.value = '';
 
-          alert(`Project "${title}" added successfully!`);
-          showSuccessMessage(`Project "${title}" added successfully!`);
+          alert(`Project "${title}" with ${uploadedFiles.length} file(s) added successfully!`);
+          showSuccessMessage(`Project "${title}" with ${uploadedFiles.length} file(s) added successfully!`);
 
         } catch (error) {
           console.error('Add project error:', error);
           showErrorMessage('An error occurred while adding the project. Please try again.');
+        }
+      }
+
+      // Download all files function
+      function downloadAllFiles(projectTitle, files) {
+        try {
+          files.forEach(fileInfo => {
+            const link = document.createElement('a');
+            link.href = fileInfo.url;
+            link.download = fileInfo.name;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          });
+          showSuccessMessage(`Downloading ${files.length} files for "${projectTitle}"`);
+        } catch (error) {
+          console.error('Download error:', error);
+          showErrorMessage('Error downloading files. Please try individual file downloads.');
         }
       }
 
