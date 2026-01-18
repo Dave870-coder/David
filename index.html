@@ -881,7 +881,7 @@
       }
 
       // Add project with comprehensive error handling
-      function addProject() {
+      async function addProject() {
         try {
           if (!isAdminLoggedIn) {
             alert('Admin access required. Please log in first.');
