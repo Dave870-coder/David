@@ -406,6 +406,10 @@
         deleteFileBlob: async function(id) {
           return await deleteFileBlob(id);
         },
+        // Decrement a file reference (used for rollback-safe cleanup)
+        decrementFileRef: async function(id) {
+          return await decFileRef(id);
+        },
         // List files with basic metadata
         listFiles: async function() {
           return await listFiles();

@@ -389,6 +389,17 @@
           <button id="uploadProjectBtn" class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Upload Project</button>
 
           <div class="space-y-2 p-3 bg-white rounded-xl border border-gray-200">
+            <label for="projectZipFile" class="text-sm font-medium text-gray-700">Import project from ZIP package</label>
+            <input type="file" id="projectZipFile" accept=".zip,application/zip,application/x-zip-compressed" class="w-full p-2 border border-gray-200 rounded-lg" />
+            <div id="projectZipDropZone" class="w-full border-2 border-dashed border-blue-300 rounded-lg p-3 text-center text-sm text-gray-600 bg-blue-50">
+              Drag and drop a .zip software package here
+            </div>
+            <button id="importProjectZipBtn" type="button" class="w-full bg-blue-700 text-white p-3 rounded-xl font-semibold hover:bg-blue-800 transition-all duration-300">Import ZIP as New Project</button>
+            <div class="text-xs text-gray-600" id="zipImportProgressText">ZIP import progress: 0%</div>
+            <div class="w-full bg-gray-200 rounded h-2 overflow-hidden"><div id="zipImportProgressBar" class="bg-blue-700 h-2" style="width:0%"></div></div>
+          </div>
+
+          <div class="space-y-2 p-3 bg-white rounded-xl border border-gray-200">
             <label for="importDbFile" class="text-sm font-medium text-gray-700">Import SQLite DB file</label>
             <input type="file" id="importDbFile" accept=".sqlite,.db,application/octet-stream" class="w-full p-2 border border-gray-200 rounded-lg" />
             <button id="importDbBtn" type="button" class="w-full bg-purple-600 text-white p-3 rounded-xl font-semibold hover:bg-purple-700 transition-all duration-300">Import DB</button>

@@ -4,7 +4,7 @@
   let isDbReady = false;
 
   function setDbUiState(enabled, reason) {
-    const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn', 'importDbBtn'];
+    const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn', 'importDbBtn', 'importProjectZipBtn'];
     ids.forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -686,6 +686,124 @@
     }
   };
 
+  window.importProjectZip = async function() {
+    const savedFileIds = [];
+    const zipInput = document.getElementById('projectZipFile');
+    const selectedZip = zipInput && zipInput.files ? zipInput.files[0] : null;
+    if (!selectedZip) {
+      notifyError('Select a ZIP file to import as a project.');
+      return;
+    }
+
+    try {
+      const adminUploadPanel = document.getElementById('adminUpload');
+      const isLoggedIn = window.isAdminLoggedIn === true || (adminUploadPanel && !adminUploadPanel.classList.contains('hidden'));
+      if (!isLoggedIn) {
+        notifyError('Admin access required. Please log in first.');
+        return;
+      }
+      if (!isDbReady || !window.DB || !window.DB.saveFileBlob || !window.DB.addProject) {
+        notifyError('Local DB is not ready yet.');
+        return;
+      }
+      if (typeof JSZip === 'undefined') {
+        notifyError('JSZip not loaded. Please check network and reload.');
+        return;
+      }
+
+      const quotaInfo = await checkStorageQuota(selectedZip.size * 3);
+      if (quotaInfo.supported && quotaInfo.quota && quotaInfo.projected > quotaInfo.quota) {
+        notifyError('ZIP import likely exceeds browser storage quota.');
+        return;
+      }
+
+      setProgress('zipImportProgressBar', 'zipImportProgressText', 0.02, 'Reading ZIP file...');
+      const zipBuffer = await readFileAsArrayBufferWithProgress(selectedZip, (fraction) => {
+        setProgress('zipImportProgressBar', 'zipImportProgressText', fraction * 0.35, `Reading ZIP... ${Math.round(fraction * 100)}%`);
+      });
+
+      const zip = await JSZip.loadAsync(zipBuffer);
+      const entries = Object.values(zip.files).filter((entry) => !entry.dir);
+      if (entries.length === 0) {
+        notifyError('ZIP has no importable files.');
+        setProgress('zipImportProgressBar', 'zipImportProgressText', 0, 'ZIP import failed');
+        return;
+      }
+
+      const typedTitle = document.getElementById('projectTitle')?.value?.trim();
+      const title = typedTitle || selectedZip.name.replace(/\.zip$/i, '');
+      const type = document.getElementById('projectType')?.value || 'Software Project';
+      const uploadedFiles = [];
+
+      for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        const blob = await entry.async('blob', (metadata) => {
+          const entryPart = (metadata.percent || 0) / 100;
+          const overall = 0.35 + ((i + entryPart) / entries.length) * 0.55;
+          setProgress('zipImportProgressBar', 'zipImportProgressText', overall, `Importing ${entry.name} (${Math.round(entryPart * 100)}%)`);
+        });
+
+        const safeFile = new File([blob], entry.name, { type: blob.type || 'application/octet-stream' });
+        let hashOrFlag = null;
+        if (safeFile.size > 150 * 1024 * 1024) {
+          hashOrFlag = 'NO_HASH';
+        } else {
+          hashOrFlag = await computeHashWithProgress(safeFile, () => {});
+        }
+
+        const fileId = await window.DB.saveFileBlob(safeFile, hashOrFlag);
+        if (!fileId) {
+          throw new Error(`Failed to save file ${entry.name}`);
+        }
+
+        savedFileIds.push(fileId);
+        window.__lastZipImportSavedIds = savedFileIds;
+        uploadedFiles.push({
+          name: entry.name,
+          size: safeFile.size,
+          type: safeFile.type || 'application/octet-stream',
+          fileId
+        });
+      }
+
+      const projectData = {
+        title,
+        type,
+        description: `Imported from ZIP package: ${selectedZip.name}`,
+        files: uploadedFiles,
+        uploadedAt: new Date().toISOString()
+      };
+
+      const added = await window.DB.addProject(projectData);
+      if (!added) {
+        throw new Error('Failed to create project from ZIP');
+      }
+
+      setProgress('zipImportProgressBar', 'zipImportProgressText', 1, `ZIP import complete (${entries.length} files)`);
+      if (zipInput) zipInput.value = '';
+      await renderAllProjects(document.getElementById('projectSearchInput')?.value?.trim() || '');
+      await refreshQuotaWarning(0);
+      notifySuccess(`ZIP imported successfully as project "${title}".`);
+    } catch (error) {
+      console.error('importProjectZip error:', error);
+      setProgress('zipImportProgressBar', 'zipImportProgressText', 0, 'ZIP import failed. Rolling back...');
+
+      try {
+        for (const id of savedFileIds) {
+          if (window.DB && window.DB.decrementFileRef) {
+            await window.DB.decrementFileRef(id);
+          }
+        }
+      } catch (rollbackErr) {
+        console.error('ZIP rollback error:', rollbackErr);
+      }
+
+      notifyError('ZIP import failed and rollback attempted.');
+    } finally {
+      window.__lastZipImportSavedIds = [];
+    }
+  };
+
   function readFileAsArrayBufferWithProgress(file, onProgress) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -711,6 +829,9 @@
     const projectSearchBtn = document.getElementById('projectSearchBtn');
     const manageSearchInput = document.getElementById('manageSearchInput');
     const importDbBtn = document.getElementById('importDbBtn');
+    const importProjectZipBtn = document.getElementById('importProjectZipBtn');
+    const projectZipDropZone = document.getElementById('projectZipDropZone');
+    const projectZipFile = document.getElementById('projectZipFile');
 
     if (projectSearchInput) {
       projectSearchInput.addEventListener('input', async () => {
@@ -740,6 +861,44 @@
       importDbBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         await window.importSqliteDb();
+      });
+    }
+
+    if (importProjectZipBtn) {
+      importProjectZipBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        window.__lastZipImportSavedIds = [];
+        await window.importProjectZip();
+      });
+    }
+
+    if (projectZipDropZone && projectZipFile) {
+      ['dragenter', 'dragover'].forEach(evt => {
+        projectZipDropZone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          projectZipDropZone.classList.add('border-blue-500', 'bg-blue-100');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(evt => {
+        projectZipDropZone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          projectZipDropZone.classList.remove('border-blue-500', 'bg-blue-100');
+        });
+      });
+
+      projectZipDropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer?.files;
+        if (!files || files.length === 0) return;
+        const first = files[0];
+        if (!first.name.toLowerCase().endsWith('.zip')) {
+          notifyError('Only .zip files are accepted in the drop zone.');
+          return;
+        }
+        const dt = new DataTransfer();
+        dt.items.add(first);
+        projectZipFile.files = dt.files;
+        setProgress('zipImportProgressBar', 'zipImportProgressText', 0, `Ready: ${first.name}`);
       });
     }
 
