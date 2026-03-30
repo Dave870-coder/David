@@ -7,6 +7,7 @@
     entries: []
   };
   let zipPreviewFilter = '';
+  let zipPreviewExtFilter = 'all';
 
   function setDbUiState(enabled, reason) {
     const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn', 'importDbBtn', 'importProjectZipBtn'];
@@ -108,6 +109,50 @@
     return `${file.name}|${file.size}|${file.lastModified || 0}`;
   }
 
+  function getEntryExt(name) {
+    if (!name || !name.includes('.')) return '(none)';
+    return `.${name.split('.').pop().toLowerCase()}`;
+  }
+
+  function isZipEntryVisible(entry, query, extFilter) {
+    const matchesQuery = !query || entry.name.toLowerCase().includes(query);
+    const entryExt = getEntryExt(entry.name);
+    const matchesExt = !extFilter || extFilter === 'all' || entryExt === extFilter;
+    return matchesQuery && matchesExt;
+  }
+
+  function renderZipExtChips(entries) {
+    const chips = document.getElementById('zipExtChips');
+    if (!chips) return;
+    chips.innerHTML = '';
+
+    const counts = {};
+    (entries || []).forEach((entry) => {
+      const ext = getEntryExt(entry.name);
+      counts[ext] = (counts[ext] || 0) + 1;
+    });
+
+    const orderedExts = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const values = ['all', ...orderedExts.slice(0, 20)];
+
+    values.forEach((value) => {
+      const btn = document.createElement('button');
+      const isActive = zipPreviewExtFilter === value;
+      const label = value === 'all' ? `All (${entries.length})` : `${value} (${counts[value] || 0})`;
+      btn.type = 'button';
+      btn.className = isActive
+        ? 'text-xs px-2 py-1 rounded bg-blue-600 text-white'
+        : 'text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300';
+      btn.innerText = label;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        zipPreviewExtFilter = value;
+        renderZipPreviewTable();
+      });
+      chips.appendChild(btn);
+    });
+  }
+
   function renderZipPreviewTable() {
     const panel = document.getElementById('zipPreviewPanel');
     const body = document.getElementById('zipPreviewTableBody');
@@ -132,9 +177,10 @@
     const visibleEntries = entries
       .map((entry, index) => ({ entry, index }))
       .filter(item => {
-        if (!query) return true;
-        return item.entry.name.toLowerCase().includes(query);
+        return isZipEntryVisible(item.entry, query, zipPreviewExtFilter);
       });
+
+    renderZipExtChips(entries);
 
     const includedCount = entries.filter(e => e.include).length;
     summary.textContent = `ZIP preview: ${includedCount}/${entries.length} selected • showing ${visibleEntries.length}`;
@@ -166,7 +212,7 @@
     if (!zipPreviewState.entries || zipPreviewState.entries.length === 0) return;
     const query = (zipPreviewFilter || '').trim().toLowerCase();
     zipPreviewState.entries.forEach((entry) => {
-      if (!query || entry.name.toLowerCase().includes(query)) {
+      if (isZipEntryVisible(entry, query, zipPreviewExtFilter)) {
         entry.include = include;
       }
     });
@@ -199,6 +245,7 @@
       entries
     };
     zipPreviewFilter = '';
+    zipPreviewExtFilter = 'all';
     const filterInput = document.getElementById('zipPreviewFilterInput');
     if (filterInput) filterInput.value = '';
     renderZipPreviewTable();
