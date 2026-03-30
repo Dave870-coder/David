@@ -8,6 +8,7 @@
   };
   let zipPreviewFilter = '';
   let zipPreviewExtFilter = 'all';
+  let zipShowAllExtChips = false;
 
   function setDbUiState(enabled, reason) {
     const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn', 'importDbBtn', 'importProjectZipBtn'];
@@ -125,6 +126,7 @@
     const chips = document.getElementById('zipExtChips');
     if (!chips) return;
     chips.innerHTML = '';
+    const TOP_EXT_CHIPS = 8;
 
     const counts = {};
     (entries || []).forEach((entry) => {
@@ -133,7 +135,13 @@
     });
 
     const orderedExts = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-    const values = ['all', ...orderedExts.slice(0, 20)];
+    let visibleExts = zipShowAllExtChips ? orderedExts : orderedExts.slice(0, TOP_EXT_CHIPS);
+
+    if (zipPreviewExtFilter !== 'all' && orderedExts.includes(zipPreviewExtFilter) && !visibleExts.includes(zipPreviewExtFilter)) {
+      visibleExts = [...visibleExts, zipPreviewExtFilter];
+    }
+
+    const values = ['all', ...visibleExts];
 
     values.forEach((value) => {
       const btn = document.createElement('button');
@@ -151,6 +159,19 @@
       });
       chips.appendChild(btn);
     });
+
+    if (orderedExts.length > TOP_EXT_CHIPS) {
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'text-xs px-2 py-1 rounded bg-slate-700 text-white hover:bg-slate-800';
+      toggleBtn.innerText = zipShowAllExtChips ? 'Less…' : `More… (+${orderedExts.length - TOP_EXT_CHIPS})`;
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        zipShowAllExtChips = !zipShowAllExtChips;
+        renderZipPreviewTable();
+      });
+      chips.appendChild(toggleBtn);
+    }
   }
 
   function renderZipPreviewTable() {
@@ -246,6 +267,7 @@
     };
     zipPreviewFilter = '';
     zipPreviewExtFilter = 'all';
+    zipShowAllExtChips = false;
     const filterInput = document.getElementById('zipPreviewFilterInput');
     if (filterInput) filterInput.value = '';
     renderZipPreviewTable();
