@@ -2,6 +2,10 @@
 // Integrates the existing UI with the in-browser SQLite wrapper (window.DB)
 (async function(){
   let isDbReady = false;
+  let zipPreviewState = {
+    fingerprint: '',
+    entries: []
+  };
 
   function setDbUiState(enabled, reason) {
     const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn', 'importDbBtn', 'importProjectZipBtn'];
@@ -96,6 +100,87 @@
     } else {
       box.className = 'text-xs text-green-700 bg-green-100 p-2 rounded-lg';
     }
+  }
+
+  function getFileFingerprint(file) {
+    if (!file) return '';
+    return `${file.name}|${file.size}|${file.lastModified || 0}`;
+  }
+
+  function renderZipPreviewTable() {
+    const panel = document.getElementById('zipPreviewPanel');
+    const body = document.getElementById('zipPreviewTableBody');
+    const summary = document.getElementById('zipPreviewSummary');
+    if (!panel || !body || !summary) return;
+
+    body.innerHTML = '';
+    const entries = zipPreviewState.entries || [];
+    if (entries.length === 0) {
+      panel.classList.add('hidden');
+      summary.textContent = 'ZIP preview: 0 files selected';
+      return;
+    }
+
+    panel.classList.remove('hidden');
+    const includedCount = entries.filter(e => e.include).length;
+    summary.textContent = `ZIP preview: ${includedCount}/${entries.length} files selected`;
+
+    entries.forEach((entry, index) => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b';
+      const ext = entry.name.includes('.') ? entry.name.split('.').pop().toLowerCase() : '-';
+      tr.innerHTML = `
+        <td class="p-2"><input type="checkbox" ${entry.include ? 'checked' : ''} data-zip-index="${index}" /></td>
+        <td class="p-2 break-all text-gray-700">${entry.name}</td>
+        <td class="p-2 text-gray-500">${ext}</td>
+      `;
+      body.appendChild(tr);
+    });
+
+    body.querySelectorAll('input[type="checkbox"][data-zip-index]').forEach((checkbox) => {
+      checkbox.addEventListener('change', (e) => {
+        const idx = Number(e.target.getAttribute('data-zip-index'));
+        if (!Number.isNaN(idx) && zipPreviewState.entries[idx]) {
+          zipPreviewState.entries[idx].include = !!e.target.checked;
+          renderZipPreviewTable();
+        }
+      });
+    });
+  }
+
+  function setZipPreviewAll(include) {
+    if (!zipPreviewState.entries || zipPreviewState.entries.length === 0) return;
+    zipPreviewState.entries.forEach(e => { e.include = include; });
+    renderZipPreviewTable();
+  }
+
+  async function buildZipPreview(file) {
+    if (!file) return;
+    const fingerprint = getFileFingerprint(file);
+    if (zipPreviewState.fingerprint === fingerprint && zipPreviewState.entries.length > 0) {
+      renderZipPreviewTable();
+      return;
+    }
+
+    setProgress('zipImportProgressBar', 'zipImportProgressText', 0.03, 'Reading ZIP for preview...');
+    const zipBuffer = await readFileAsArrayBufferWithProgress(file, (fraction) => {
+      setProgress('zipImportProgressBar', 'zipImportProgressText', fraction * 0.4, `Scanning ZIP... ${Math.round(fraction * 100)}%`);
+    });
+
+    if (typeof JSZip === 'undefined') {
+      throw new Error('JSZip not loaded');
+    }
+    const zip = await JSZip.loadAsync(zipBuffer);
+    const entries = Object.values(zip.files)
+      .filter((entry) => !entry.dir)
+      .map((entry) => ({ name: entry.name, include: true }));
+
+    zipPreviewState = {
+      fingerprint,
+      entries
+    };
+    renderZipPreviewTable();
+    setProgress('zipImportProgressBar', 'zipImportProgressText', 0.45, `ZIP preview ready (${entries.length} files)`);
   }
 
   // Render existing projects from DB into the project list
@@ -711,6 +796,14 @@
         return;
       }
 
+      await buildZipPreview(selectedZip);
+      const includedNames = new Set((zipPreviewState.entries || []).filter(e => e.include).map(e => e.name));
+      if (includedNames.size === 0) {
+        notifyError('No ZIP files selected. Use include toggles in preview.');
+        setProgress('zipImportProgressBar', 'zipImportProgressText', 0, 'ZIP import canceled');
+        return;
+      }
+
       const quotaInfo = await checkStorageQuota(selectedZip.size * 3);
       if (quotaInfo.supported && quotaInfo.quota && quotaInfo.projected > quotaInfo.quota) {
         notifyError('ZIP import likely exceeds browser storage quota.');
@@ -723,7 +816,7 @@
       });
 
       const zip = await JSZip.loadAsync(zipBuffer);
-      const entries = Object.values(zip.files).filter((entry) => !entry.dir);
+      const entries = Object.values(zip.files).filter((entry) => !entry.dir && includedNames.has(entry.name));
       if (entries.length === 0) {
         notifyError('ZIP has no importable files.');
         setProgress('zipImportProgressBar', 'zipImportProgressText', 0, 'ZIP import failed');
@@ -832,6 +925,8 @@
     const importProjectZipBtn = document.getElementById('importProjectZipBtn');
     const projectZipDropZone = document.getElementById('projectZipDropZone');
     const projectZipFile = document.getElementById('projectZipFile');
+    const zipIncludeAllBtn = document.getElementById('zipIncludeAllBtn');
+    const zipExcludeAllBtn = document.getElementById('zipExcludeAllBtn');
 
     if (projectSearchInput) {
       projectSearchInput.addEventListener('input', async () => {
@@ -872,6 +967,38 @@
       });
     }
 
+    if (projectZipFile) {
+      projectZipFile.addEventListener('change', async () => {
+        const f = projectZipFile.files && projectZipFile.files[0];
+        if (!f) return;
+        if (!f.name.toLowerCase().endsWith('.zip')) {
+          notifyError('Only .zip files are supported for ZIP import.');
+          return;
+        }
+        try {
+          await buildZipPreview(f);
+        } catch (e) {
+          console.error('ZIP preview error:', e);
+          notifyError('Failed to preview ZIP contents.');
+          setProgress('zipImportProgressBar', 'zipImportProgressText', 0, 'Preview failed');
+        }
+      });
+    }
+
+    if (zipIncludeAllBtn) {
+      zipIncludeAllBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setZipPreviewAll(true);
+      });
+    }
+
+    if (zipExcludeAllBtn) {
+      zipExcludeAllBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setZipPreviewAll(false);
+      });
+    }
+
     if (projectZipDropZone && projectZipFile) {
       ['dragenter', 'dragover'].forEach(evt => {
         projectZipDropZone.addEventListener(evt, (e) => {
@@ -899,6 +1026,10 @@
         dt.items.add(first);
         projectZipFile.files = dt.files;
         setProgress('zipImportProgressBar', 'zipImportProgressText', 0, `Ready: ${first.name}`);
+        buildZipPreview(first).catch((err) => {
+          console.error('ZIP preview error:', err);
+          notifyError('Failed to preview dropped ZIP contents.');
+        });
       });
     }
 

@@ -394,6 +394,27 @@
             <div id="projectZipDropZone" class="w-full border-2 border-dashed border-blue-300 rounded-lg p-3 text-center text-sm text-gray-600 bg-blue-50">
               Drag and drop a .zip software package here
             </div>
+            <div id="zipPreviewPanel" class="hidden space-y-2 border border-gray-200 rounded-lg p-2 bg-gray-50">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-xs text-gray-700" id="zipPreviewSummary">ZIP preview: 0 files selected</div>
+                <div class="flex gap-2">
+                  <button id="zipIncludeAllBtn" type="button" class="text-xs bg-green-600 text-white px-2 py-1 rounded">Include All</button>
+                  <button id="zipExcludeAllBtn" type="button" class="text-xs bg-gray-600 text-white px-2 py-1 rounded">Exclude All</button>
+                </div>
+              </div>
+              <div class="max-h-56 overflow-y-auto border rounded bg-white">
+                <table class="w-full text-xs">
+                  <thead class="bg-gray-100 sticky top-0">
+                    <tr>
+                      <th class="text-left p-2">Include</th>
+                      <th class="text-left p-2">Path</th>
+                      <th class="text-left p-2">Ext</th>
+                    </tr>
+                  </thead>
+                  <tbody id="zipPreviewTableBody"></tbody>
+                </table>
+              </div>
+            </div>
             <button id="importProjectZipBtn" type="button" class="w-full bg-blue-700 text-white p-3 rounded-xl font-semibold hover:bg-blue-800 transition-all duration-300">Import ZIP as New Project</button>
             <div class="text-xs text-gray-600" id="zipImportProgressText">ZIP import progress: 0%</div>
             <div class="w-full bg-gray-200 rounded h-2 overflow-hidden"><div id="zipImportProgressBar" class="bg-blue-700 h-2" style="width:0%"></div></div>
