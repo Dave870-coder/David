@@ -7,8 +7,24 @@
     console.error('SQLite failed to initialize in app.js:', e);
   }
 
+  function notifyError(message) {
+    if (typeof window.showErrorMessage === 'function') {
+      window.showErrorMessage(message);
+      return;
+    }
+    console.error(message);
+  }
+
+  function notifySuccess(message) {
+    if (typeof window.showSuccessMessage === 'function') {
+      window.showSuccessMessage(message);
+      return;
+    }
+    console.log(message);
+  }
+
   // Render existing projects from DB into the project list
-  function renderProjectCard(p) {
+  async function renderProjectCard(p) {
     const projectList = document.getElementById('projectList');
     if (!projectList) return;
 
@@ -70,9 +86,9 @@
   }
 
   // Load and render existing projects
-  function loadProjectsFromDB() {
+  async function loadProjectsFromDB() {
     try {
-      renderAllProjects();
+      await renderAllProjects();
     } catch (e) {
       console.error('Error loading projects from DB:', e);
     }
@@ -85,13 +101,16 @@
     return (p.title && p.title.toLowerCase().includes(q)) || (p.type && p.type.toLowerCase().includes(q)) || (p.description && p.description.toLowerCase().includes(q));
   }
 
-  function renderAllProjects(filter) {
+  async function renderAllProjects(filter) {
     const projectList = document.getElementById('projectList');
     if (!projectList) return;
     projectList.innerHTML = '';
     try {
       const projects = window.DB ? window.DB.listProjects() : [];
-      projects.filter(p => matchesFilter(p, filter || '')).forEach(p => renderProjectCard(p));
+      const filtered = projects.filter(p => matchesFilter(p, filter || ''));
+      for (const project of filtered) {
+        await renderProjectCard(project);
+      }
     } catch (e) {
       console.error('renderAllProjects error', e);
     }
@@ -121,16 +140,9 @@
         del.innerText = 'Delete';
         del.onclick = async () => {
           if (!confirm('Delete project "' + p.title + '"? This will remove db record.')) return;
-          // attempt to delete referenced file blobs
-          try {
-            const files = p.files || [];
-            for (const f of files) {
-              if (f.fileId && window.DB && window.DB.deleteFileBlob) await window.DB.deleteFileBlob(f.fileId);
-            }
-          } catch (e) { console.warn('Error deleting related blobs', e); }
           if (window.DB && window.DB.deleteProject) {
-            window.DB.deleteProject(p.id);
-            refreshManagePanel();
+            await window.DB.deleteProject(p.id);
+            await refreshManagePanel();
             location.reload();
           }
         };
@@ -191,8 +203,11 @@
         del.className = 'ml-2 bg-red-600 text-white px-3 py-1 rounded';
         del.innerText = 'Delete';
         del.onclick = async () => {
+          if (refs.length > 0) {
+            alert('This file is still referenced by project(s). Delete those project references first.');
+            return;
+          }
           if (!confirm('Delete file ' + ((f.meta && f.meta.name) || f.id) + '?')) return;
-          // only delete if refCount <=1 (DB.deleteFileBlob already handles removal), but we call decFileRef to be safe
           if (window.DB && window.DB.deleteFileBlob) {
             const ok = await window.DB.deleteFileBlob(f.id);
             if (!ok) alert('Failed to delete file');
@@ -217,7 +232,6 @@
         left.appendChild(refsInline);
         el.appendChild(btns);
         filesContainer.appendChild(el);
-        filesContainer.appendChild(refsBox);
       }
     } catch (e) { console.error('manage files load error', e); }
   }
@@ -234,6 +248,7 @@
     try {
       if (!confirm('Run automatic dedupe by content hash? This will merge identical files and update references.')) return;
       const files = window.DB && window.DB.listFiles ? await window.DB.listFiles() : [];
+      const dedupeMode = document.getElementById('dedupeMode')?.value || 'content';
       const total = files.length;
       const progress = document.getElementById('dedupeProgress') || (() => { const d = document.createElement('div'); d.id = 'dedupeProgress'; d.className='my-2'; document.getElementById('manageDbPanel').prepend(d); return d; })();
       const hashMap = {};
@@ -243,12 +258,14 @@
         const blob = await window.DB.getFileBlob(f.id);
         if (!blob) continue;
         const hash = await computeHashWithProgress(blob, (p)=>{});
-        if (!hashMap[hash]) hashMap[hash] = [];
-        hashMap[hash].push(f.id);
+        const fileName = (f.meta && f.meta.name) ? f.meta.name : '';
+        const key = dedupeMode === 'filename' ? `${fileName}::${hash}` : hash;
+        if (!hashMap[key]) hashMap[key] = [];
+        hashMap[key].push(f.id);
       }
       let mergedCount = 0;
-      for (const hash in hashMap) {
-        const ids = hashMap[hash];
+      for (const key in hashMap) {
+        const ids = hashMap[key];
         if (ids.length > 1) {
           const target = ids[0];
           for (let k = 1; k < ids.length; k++) {
@@ -400,9 +417,11 @@
   window.addProject = async function() {
     try {
       // Use the same DOM elements as the original implementation
-      if (!isAdminLoggedIn) {
+      const adminUploadPanel = document.getElementById('adminUpload');
+      const isLoggedIn = window.isAdminLoggedIn === true || (adminUploadPanel && !adminUploadPanel.classList.contains('hidden'));
+      if (!isLoggedIn) {
         alert('Admin access required. Please log in first.');
-        showErrorMessage('Admin access required. Please log in first.');
+        notifyError('Admin access required. Please log in first.');
         return;
       }
 
@@ -411,7 +430,7 @@
       const fileInput = document.getElementById('projectFile');
 
       if (!titleInput || !typeSelect || !fileInput) {
-        showErrorMessage('Required form elements not found.');
+        notifyError('Required form elements not found.');
         return;
       }
 
@@ -419,8 +438,8 @@
       const type = typeSelect.value;
       const files = fileInput.files;
 
-      if (!title) { showErrorMessage('Please enter a project title.'); return; }
-      if (!files || files.length === 0) { showErrorMessage('Please select project file(s).'); return; }
+      if (!title) { notifyError('Please enter a project title.'); return; }
+      if (!files || files.length === 0) { notifyError('Please select project file(s).'); return; }
 
       const maxSize = 50 * 1024 * 1024;
       const uploadedFiles = [];
@@ -468,41 +487,79 @@
 
       if (window.DB && await window.DB.addProject(projectData)) {
         // reload projects to get IDs and updated data
-        renderAllProjects();
+        await renderAllProjects(document.getElementById('projectSearchInput')?.value?.trim() || '');
         titleInput.value = '';
         fileInput.value = '';
         alert(`Project "${title}" with ${uploadedFiles.length} file(s) added successfully!`);
-        showSuccessMessage(`Project "${title}" added and saved to local SQLite DB.`);
+        notifySuccess(`Project "${title}" added and saved to local SQLite DB.`);
       } else {
-        showErrorMessage('Failed to save project to local DB.');
+        notifyError('Failed to save project to local DB.');
       }
     } catch (e) {
       console.error('Override addProject error:', e);
-      showErrorMessage('An error occurred while adding the project.');
+      notifyError('An error occurred while adding the project.');
     }
   };
 
   // Provide a download link for the whole SQLite DB
   window.downloadSqliteDb = function() {
     try {
-      if (!window.DB) { showErrorMessage('DB not initialized'); return; }
+      if (!window.DB) { notifyError('DB not initialized'); return; }
       const url = window.DB.exportFileUrl();
-      if (!url) { showErrorMessage('Failed to export DB'); return; }
+      if (!url) { notifyError('Failed to export DB'); return; }
       const a = document.createElement('a');
       a.href = url;
       a.download = 'projects.sqlite';
       document.body.appendChild(a);
       a.click();
       a.remove();
-      showSuccessMessage('SQLite DB exported (download started).');
+      notifySuccess('SQLite DB exported (download started).');
     } catch (e) {
       console.error('downloadSqliteDb error:', e);
-      showErrorMessage('Failed to export DB.');
+      notifyError('Failed to export DB.');
     }
   };
 
   // Run initial load
   document.addEventListener('DOMContentLoaded', () => {
+    const projectSearchInput = document.getElementById('projectSearchInput');
+    const projectSearchBtn = document.getElementById('projectSearchBtn');
+    const manageSearchInput = document.getElementById('manageSearchInput');
+
+    if (projectSearchInput) {
+      projectSearchInput.addEventListener('input', async () => {
+        await renderAllProjects(projectSearchInput.value.trim());
+      });
+      projectSearchInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          await renderAllProjects(projectSearchInput.value.trim());
+        }
+      });
+    }
+
+    if (projectSearchBtn) {
+      projectSearchBtn.addEventListener('click', async () => {
+        await renderAllProjects(projectSearchInput?.value?.trim() || '');
+      });
+    }
+
+    if (manageSearchInput) {
+      manageSearchInput.addEventListener('input', async () => {
+        await refreshManagePanel();
+      });
+    }
+
+    const uploadBtn = document.getElementById('uploadProjectBtn');
+    if (uploadBtn) {
+      const cloned = uploadBtn.cloneNode(true);
+      uploadBtn.parentNode.replaceChild(cloned, uploadBtn);
+      cloned.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await window.addProject();
+      });
+    }
+
     loadProjectsFromDB();
   });
 

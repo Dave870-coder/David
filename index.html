@@ -337,7 +337,14 @@
         <h3 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 xs:mb-4 text-gray-900">My Projects</h3>
         <p class="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-600 max-w-2xl xs:max-w-3xl mx-auto px-2 mb-6">Software applications and graphic design portfolio showcasing my expertise</p>
         <div class="max-w-md mx-auto mb-4">
-          <input id="projectSearchInput" type="text" placeholder="Search projects by title or type" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base" />
+          <div class="flex items-center gap-2">
+            <input id="projectSearchInput" type="text" placeholder="Search projects by title or type" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base" />
+            <button id="projectSearchBtn" type="button" aria-label="Search Projects" class="p-3 border-2 border-gray-200 rounded-xl hover:border-blue-500 transition-colors bg-white">
+              <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1188,18 +1195,32 @@
       }
     });
 
+    // Global helper for safe error toast calls
+    function safeShowError(message) {
+      if (typeof window.showErrorMessage === 'function') {
+        window.showErrorMessage(message);
+        return;
+      }
+      const existing = document.getElementById('global-error-toast');
+      if (existing) existing.remove();
+      const errorDiv = document.createElement('div');
+      errorDiv.id = 'global-error-toast';
+      errorDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      errorDiv.innerText = message;
+      document.body.appendChild(errorDiv);
+      setTimeout(() => errorDiv.remove(), 4000);
+    }
+
     // Global error handler
     window.addEventListener('error', function(e) {
       console.error('Global error:', e.error);
-      alert('An unexpected error occurred. Please refresh the page.');
-      showErrorMessage('An unexpected error occurred. Please refresh the page.');
+      safeShowError('An unexpected error occurred. Please refresh the page.');
     });
 
     // Unhandled promise rejection handler
     window.addEventListener('unhandledrejection', function(e) {
       console.error('Unhandled promise rejection:', e.reason);
-      alert('A background process failed. Some features may not work properly.');
-      showErrorMessage('A background process failed. Some features may not work properly.');
+      safeShowError('A background process failed. Some features may not work properly.');
     });
   </script>
 

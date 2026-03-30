@@ -13,11 +13,12 @@
       // Helper: simple IndexedDB wrapper for storing the sqlite file and blobs
       function openIDB() {
         return new Promise((resolve, reject) => {
-          const r = indexedDB.open('local-sqlite-store', 1);
+          const r = indexedDB.open('local-sqlite-store', 2);
           r.onupgradeneeded = function(e) {
             const idb = e.target.result;
             if (!idb.objectStoreNames.contains('sqlite')) idb.createObjectStore('sqlite');
             if (!idb.objectStoreNames.contains('files')) idb.createObjectStore('files');
+            if (!idb.objectStoreNames.contains('libs')) idb.createObjectStore('libs');
           };
           r.onsuccess = () => resolve(r.result);
           r.onerror = () => reject(r.error || new Error('IndexedDB open failed'));
@@ -316,7 +317,7 @@
             return null;
           }
         },
-        deleteProject: function(id) {
+        deleteProject: async function(id) {
           try {
             // fetch project row to find referenced files
             const sel = db.exec("SELECT files FROM projects WHERE id = " + id);
@@ -349,8 +350,8 @@
           }
         },
         // Save a file blob into IndexedDB and return generated id
-        saveFileBlob: async function(blob) {
-          return await saveFileBlob(blob);
+        saveFileBlob: async function(blob, precomputedHash) {
+          return await saveFileBlob(blob, precomputedHash);
         },
         // Retrieve a file blob by id (returns Promise<Blob|null>)
         getFileBlob: async function(id) {
