@@ -336,6 +336,9 @@
       <div class="text-center mb-8 xs:mb-10 md:mb-12 lg:mb-16 animate-on-scroll">
         <h3 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 xs:mb-4 text-gray-900">My Projects</h3>
         <p class="text-base xs:text-lg sm:text-xl md:text-2xl text-gray-600 max-w-2xl xs:max-w-3xl mx-auto px-2 mb-6">Software applications and graphic design portfolio showcasing my expertise</p>
+        <div class="max-w-md mx-auto mb-4">
+          <input id="projectSearchInput" type="text" placeholder="Search projects by title or type" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors text-sm xs:text-base" />
+        </div>
       </div>
 
       <!-- Admin Login -->
@@ -367,6 +370,40 @@
             <strong>Supported file types:</strong> All programming languages, images, documents, archives, and media files (Max: 50MB per file)
           </div>
           <button id="uploadProjectBtn" class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Upload Project</button>
+          <div class="flex flex-col gap-2">
+            <button id="exportDbBtn" type="button" onclick="showExportConfirmation()" class="w-full mt-3 bg-gray-700 text-white p-3 xs:p-4 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Export DB</button>
+            <button id="manageDbBtn" type="button" onclick="showManagePanel()" class="w-full bg-indigo-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Manage DB</button>
+          </div>
+        </div>
+      </div>
+      <!-- Manage DB Panel (hidden by default) -->
+      <div id="manageDbPanel" class="hidden max-w-lg xs:max-w-xl md:max-w-2xl mx-auto bg-white p-4 xs:p-6 md:p-8 rounded-3xl shadow-xl mb-6 xs:mb-8 md:mb-12 animate-on-scroll">
+        <h4 class="text-lg xs:text-xl md:text-2xl font-semibold mb-4 xs:mb-6 text-center text-gray-900">Manage Stored Projects & Files</h4>
+        <div class="mb-4">
+            <h5 class="font-medium mb-2">Projects</h5>
+            <div class="mb-3">
+              <input id="manageSearchInput" type="text" placeholder="Filter projects in manager" class="w-full p-2 border rounded" />
+            </div>
+            <div id="manageProjectsList" class="border rounded-lg overflow-hidden"></div>
+          </div>
+        <div>
+          <h5 class="font-medium mb-2">Files</h5>
+          <div id="manageFilesList" class="border rounded-lg overflow-hidden"></div>
+        </div>
+        <div class="mt-4 text-center">
+            <div class="space-y-2">
+              <button id="permanentDeleteDbBtn" onclick="(async function(){ if(confirm('Permanently delete the entire local DB and stored files? This cannot be undone.')){ const ok = await window.DB.deleteDatabase(); if(ok){ alert('Database deleted. The page will reload.'); location.reload(); } else { alert('Failed to delete DB. Check console.'); } } })()" class="w-full bg-red-700 text-white p-3 rounded-xl font-semibold">Permanently Delete DB</button>
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                  <label for="dedupeMode" class="text-sm font-medium">Dedupe mode:</label>
+                  <select id="dedupeMode" class="p-2 border rounded">
+                    <option value="content">Content-only</option>
+                    <option value="filename">Filename + Content</option>
+                  </select>
+                </div>
+                <button id="dedupeAllBtn" onclick="dedupeAllByContent()" class="w-full bg-yellow-600 text-white p-3 rounded-xl font-semibold">Auto Dedupe</button>
+              </div>
+            </div>
         </div>
       </div>
 
@@ -1165,6 +1202,10 @@
       showErrorMessage('A background process failed. Some features may not work properly.');
     });
   </script>
+
+  <script src="assets/db.js"></script>
+  <script src="assets/jszip-loader.js"></script>
+  <script src="assets/app.js"></script>
 
 </body>
 </html>

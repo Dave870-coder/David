@@ -1,0 +1,509 @@
+// assets/app.js
+// Integrates the existing UI with the in-browser SQLite wrapper (window.DB)
+(async function(){
+  try {
+    await window.sqliteReady;
+  } catch (e) {
+    console.error('SQLite failed to initialize in app.js:', e);
+  }
+
+  // Render existing projects from DB into the project list
+  function renderProjectCard(p) {
+    const projectList = document.getElementById('projectList');
+    if (!projectList) return;
+
+    const card = document.createElement('div');
+    card.className = 'bg-white p-6 rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 animate-on-scroll border border-gray-100';
+
+    let fileListHTML = '';
+    const files = p.files || [];
+    // files may reference stored blobs (fileId) or inline urls
+    for (const fileInfo of files) {
+      const fileSizeMB = (fileInfo.size / (1024 * 1024)).toFixed(2);
+      let url = fileInfo.url || fileInfo.dataUrl || '';
+      if (fileInfo.fileId && window.DB && window.DB.getFileBlob) {
+        try {
+          const blob = await window.DB.getFileBlob(fileInfo.fileId);
+          if (blob) url = URL.createObjectURL(blob);
+        } catch (e) {
+          console.warn('Could not load blob for', fileInfo.fileId, e);
+        }
+      }
+      fileListHTML += `
+        <div class="flex items-center justify-between py-1 border-b border-gray-100 last:border-b-0">
+          <span class="text-sm text-gray-600 truncate">${fileInfo.name}</span>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs text-gray-500">${fileSizeMB}MB</span>
+            <a href="${url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs font-medium">View</a>
+          </div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="flex items-start justify-between mb-3">
+        <h4 class="text-xl font-bold text-gray-900">${p.title}</h4>
+        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">${p.type || ''}</span>
+      </div>
+      <div class="mb-4">
+        <p class="text-sm text-gray-600 mb-2">Files (${files.length}):</p>
+        <div class="max-h-32 overflow-y-auto bg-gray-50 rounded-lg p-2">
+          ${fileListHTML}
+        </div>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500">Uploaded: ${new Date(p.uploadedAt).toLocaleString()}</span>
+      </div>
+    `;
+
+    // add Download Bundle button if project has an id
+    const footer = card.querySelector('.flex.items-center.justify-between');
+    const bundleBtn = document.createElement('button');
+    bundleBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded ml-2';
+    bundleBtn.innerText = 'Download Bundle';
+    bundleBtn.onclick = function() {
+      if (!p.id) { alert('Project ID not available yet. Reload to get latest projects.'); return; }
+      exportProjectBundle(p.id, p.title || 'project');
+    };
+    if (footer) footer.appendChild(bundleBtn);
+    projectList.prepend(card);
+  }
+
+  // Load and render existing projects
+  function loadProjectsFromDB() {
+    try {
+      renderAllProjects();
+    } catch (e) {
+      console.error('Error loading projects from DB:', e);
+    }
+  }
+
+  // Render all projects with optional filter
+  function matchesFilter(p, filter) {
+    if (!filter) return true;
+    const q = filter.toLowerCase();
+    return (p.title && p.title.toLowerCase().includes(q)) || (p.type && p.type.toLowerCase().includes(q)) || (p.description && p.description.toLowerCase().includes(q));
+  }
+
+  function renderAllProjects(filter) {
+    const projectList = document.getElementById('projectList');
+    if (!projectList) return;
+    projectList.innerHTML = '';
+    try {
+      const projects = window.DB ? window.DB.listProjects() : [];
+      projects.filter(p => matchesFilter(p, filter || '')).forEach(p => renderProjectCard(p));
+    } catch (e) {
+      console.error('renderAllProjects error', e);
+    }
+  }
+
+  // Manage panel: list projects and stored files, allow deletion
+  async function refreshManagePanel() {
+    const projectsContainer = document.getElementById('manageProjectsList');
+    const filesContainer = document.getElementById('manageFilesList');
+    if (!projectsContainer || !filesContainer) return;
+    projectsContainer.innerHTML = '';
+    filesContainer.innerHTML = '';
+
+    // Projects
+      try {
+        const projects = window.DB ? window.DB.listProjects() : [];
+        const filterInput = document.getElementById('manageSearchInput');
+        const filterValue = filterInput ? filterInput.value.trim().toLowerCase() : '';
+        projects.forEach(p => {
+          if (filterValue && !(p.title && p.title.toLowerCase().includes(filterValue)) && !(p.type && p.type.toLowerCase().includes(filterValue))) return;
+        const el = document.createElement('div');
+        el.className = 'p-3 border-b flex justify-between items-center';
+        el.innerHTML = `<div><strong>${p.title}</strong><div class="text-xs text-gray-500">${p.type} • ${new Date(p.uploadedAt).toLocaleString()}</div></div>`;
+        const btns = document.createElement('div');
+        const del = document.createElement('button');
+        del.className = 'ml-2 bg-red-600 text-white px-3 py-1 rounded';
+        del.innerText = 'Delete';
+        del.onclick = async () => {
+          if (!confirm('Delete project "' + p.title + '"? This will remove db record.')) return;
+          // attempt to delete referenced file blobs
+          try {
+            const files = p.files || [];
+            for (const f of files) {
+              if (f.fileId && window.DB && window.DB.deleteFileBlob) await window.DB.deleteFileBlob(f.fileId);
+            }
+          } catch (e) { console.warn('Error deleting related blobs', e); }
+          if (window.DB && window.DB.deleteProject) {
+            window.DB.deleteProject(p.id);
+            refreshManagePanel();
+            location.reload();
+          }
+        };
+        btns.appendChild(del);
+        el.appendChild(btns);
+        projectsContainer.appendChild(el);
+      });
+    } catch (e) { console.error('manage projects load error', e); }
+
+    // Files
+    try {
+      const files = window.DB && window.DB.listFiles ? await window.DB.listFiles() : [];
+      // get projects to compute references
+      const projects = window.DB ? window.DB.listProjects() : [];
+      for (const f of files) {
+        const el = document.createElement('div');
+        el.className = 'p-3 border-b flex justify-between items-center';
+        const name = (f.meta && f.meta.name) || f.id;
+        const size = (f.meta && f.meta.size) ? ((f.meta.size / (1024*1024)).toFixed(2) + 'MB') : '';
+        const left = document.createElement('div');
+        left.innerHTML = `<div class="text-sm">${name}</div><div class="text-xs text-gray-500">${size} • refs: ${f.meta && f.meta.refCount ? f.meta.refCount : 0}</div>`;
+
+        // Inline list of referencing project titles directly below the file name
+        const refs = projects.filter(p => (p.files || []).some(ff => ff.fileId === f.id)).map(p => ({ id: p.id, title: p.title }));
+        const refsInline = document.createElement('div');
+        refsInline.className = 'mt-1 flex flex-wrap gap-2';
+        if (refs.length) {
+          refs.forEach(r => {
+            const pill = document.createElement('span');
+            pill.className = 'text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-700';
+            pill.innerText = r.title || (`Project ${r.id}`);
+            refsInline.appendChild(pill);
+          });
+        } else {
+          const none = document.createElement('span');
+          none.className = 'text-xs text-gray-400';
+          none.innerText = 'No referencing projects';
+          refsInline.appendChild(none);
+        }
+
+        const btns = document.createElement('div');
+        const dl = document.createElement('button');
+        dl.className = 'ml-2 bg-blue-600 text-white px-3 py-1 rounded';
+        dl.innerText = 'Download';
+        dl.onclick = async () => {
+          const blob = await window.DB.getFileBlob(f.id);
+          if (!blob) { alert('File not found'); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = (f.meta && f.meta.name) || 'file';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        };
+        const del = document.createElement('button');
+        del.className = 'ml-2 bg-red-600 text-white px-3 py-1 rounded';
+        del.innerText = 'Delete';
+        del.onclick = async () => {
+          if (!confirm('Delete file ' + ((f.meta && f.meta.name) || f.id) + '?')) return;
+          // only delete if refCount <=1 (DB.deleteFileBlob already handles removal), but we call decFileRef to be safe
+          if (window.DB && window.DB.deleteFileBlob) {
+            const ok = await window.DB.deleteFileBlob(f.id);
+            if (!ok) alert('Failed to delete file');
+          }
+          refreshManagePanel();
+        };
+
+        // Merge duplicates action for this file: open dialog to pick a target or auto-merge
+        const mergeBtn = document.createElement('button');
+        mergeBtn.className = 'ml-2 bg-yellow-600 text-white px-3 py-1 rounded';
+        mergeBtn.innerText = 'Find Duplicates';
+        mergeBtn.onclick = async () => {
+          await dedupeForFile(f.id);
+          refreshManagePanel();
+        };
+
+        btns.appendChild(dl);
+        btns.appendChild(del);
+        btns.appendChild(mergeBtn);
+
+        el.appendChild(left);
+        left.appendChild(refsInline);
+        el.appendChild(btns);
+        filesContainer.appendChild(el);
+        filesContainer.appendChild(refsBox);
+      }
+    } catch (e) { console.error('manage files load error', e); }
+  }
+
+  window.showManagePanel = function() {
+    const panel = document.getElementById('manageDbPanel');
+    if (!panel) return;
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) refreshManagePanel();
+  };
+
+  // Dedupe by scanning all files, compute hashes, and merge duplicates (content-equal)
+  async function dedupeAllByContent() {
+    try {
+      if (!confirm('Run automatic dedupe by content hash? This will merge identical files and update references.')) return;
+      const files = window.DB && window.DB.listFiles ? await window.DB.listFiles() : [];
+      const total = files.length;
+      const progress = document.getElementById('dedupeProgress') || (() => { const d = document.createElement('div'); d.id = 'dedupeProgress'; d.className='my-2'; document.getElementById('manageDbPanel').prepend(d); return d; })();
+      const hashMap = {};
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        progress.innerText = `Hashing file ${i+1}/${total}: ${f.id}`;
+        const blob = await window.DB.getFileBlob(f.id);
+        if (!blob) continue;
+        const hash = await computeHashWithProgress(blob, (p)=>{});
+        if (!hashMap[hash]) hashMap[hash] = [];
+        hashMap[hash].push(f.id);
+      }
+      let mergedCount = 0;
+      for (const hash in hashMap) {
+        const ids = hashMap[hash];
+        if (ids.length > 1) {
+          const target = ids[0];
+          for (let k = 1; k < ids.length; k++) {
+            const src = ids[k];
+            progress.innerText = `Merging ${src} -> ${target}`;
+            await window.DB.mergeFileBlobs(target, src);
+            mergedCount++;
+          }
+        }
+      }
+      progress.innerText = `Dedupe complete. Merged ${mergedCount} files.`;
+      refreshManagePanel();
+    } catch (e) {
+      console.error('dedupeAllByContent error', e);
+      alert('Dedupe failed. See console.');
+    }
+  }
+
+  async function dedupeForFile(fileId) {
+    try {
+      // scan all files and compute hashes to find matches for given fileId
+      const files = window.DB && window.DB.listFiles ? await window.DB.listFiles() : [];
+      const progress = document.getElementById('dedupeProgress') || (() => { const d = document.createElement('div'); d.id = 'dedupeProgress'; d.className='my-2'; document.getElementById('manageDbPanel').prepend(d); return d; })();
+      const targetBlob = await window.DB.getFileBlob(fileId);
+      if (!targetBlob) { alert('Target blob not found'); return; }
+      const targetHash = await computeHashWithProgress(targetBlob,(p)=>{});
+      const duplicates = [];
+      for (const f of files) {
+        if (f.id === fileId) continue;
+        const b = await window.DB.getFileBlob(f.id);
+        if (!b) continue;
+        const h = await computeHashWithProgress(b,(p)=>{});
+        if (h === targetHash) duplicates.push(f.id);
+      }
+      if (duplicates.length === 0) { alert('No duplicates found'); return; }
+      if (!confirm(`Merge ${duplicates.length} duplicate(s) into ${fileId}?`)) return;
+      for (const src of duplicates) {
+        await window.DB.mergeFileBlobs(fileId, src);
+      }
+      alert('Merge complete');
+    } catch (e) { console.error('dedupeForFile error', e); alert('Dedupe failed'); }
+  }
+  window.dedupeAllByContent = dedupeAllByContent;
+
+  // Export project bundle (zip) using JSZip
+  async function exportProjectBundle(projectId, projectTitle) {
+    try {
+      if (!window.DB || !window.DB.getProject) { alert('DB not ready'); return; }
+      const proj = window.DB.getProject ? window.DB.getProject(projectId) : null;
+      if (!proj) { alert('Project not found'); return; }
+      const files = proj.files || [];
+      if (typeof JSZip === 'undefined') {
+        alert('JSZip is not loaded. Cannot create bundle.');
+        return;
+      }
+      const zip = new JSZip();
+      for (const f of files) {
+        let blob = null;
+        if (f.fileId && window.DB && window.DB.getFileBlob) {
+          blob = await window.DB.getFileBlob(f.fileId);
+        }
+        if (!blob && f.dataUrl) {
+          // convert dataURL to blob
+          const res = await fetch(f.dataUrl); blob = await res.blob();
+        }
+        if (!blob && f.url) {
+          try { const res = await fetch(f.url); blob = await res.blob(); } catch(e) { console.warn('fetch file url failed', e); }
+        }
+        const name = f.name || ('file-' + Math.random().toString(36).slice(2,8));
+        if (blob) zip.file(name, blob);
+        else zip.file(name + '.txt', 'Could not include original file (missing blob)');
+      }
+      const content = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = `${(projectTitle||'project').replace(/[^a-z0-9-_\.]/ig, '_')}_bundle.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error('exportProjectBundle error', e);
+      alert('Failed to create project bundle.');
+    }
+  }
+  window.exportProjectBundle = exportProjectBundle;
+
+  // Compute SHA-256 with chunked reads to show progress for large files
+  async function computeHashWithProgress(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      try {
+        const chunkSize = 1024 * 1024; // 1MB chunks
+        const chunks = Math.ceil(file.size / chunkSize);
+        let current = 0;
+        const reader = new FileReader();
+        const buffers = [];
+
+        reader.onerror = () => reject(reader.error || new Error('Read error'));
+        reader.onload = async (e) => {
+          buffers.push(e.target.result);
+          current++;
+          if (onProgress) onProgress(current / chunks);
+          if (current < chunks) {
+            readNext();
+          } else {
+            // concatenate
+            const totalLen = buffers.reduce((s, b) => s + b.byteLength, 0);
+            const tmp = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const b of buffers) { tmp.set(new Uint8Array(b), offset); offset += b.byteLength; }
+            try {
+              const hashBuf = await crypto.subtle.digest('SHA-256', tmp.buffer);
+              const hashArray = Array.from(new Uint8Array(hashBuf));
+              const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+              if (onProgress) onProgress(1);
+              resolve(hashHex);
+            } catch (e) { reject(e); }
+          }
+        };
+
+        function readNext() {
+          const start = current * chunkSize;
+          const end = Math.min(start + chunkSize, file.size);
+          const blob = file.slice(start, end);
+          reader.readAsArrayBuffer(blob);
+        }
+
+        readNext();
+      } catch (e) { reject(e); }
+    });
+  }
+
+  // Export confirmation showing DB size
+  window.showExportConfirmation = function() {
+    try {
+      if (!window.DB || !window.DB._raw) { alert('DB not initialized'); return; }
+      const data = window.DB._raw.export();
+      const size = data.length; // number of bytes
+      const sizeMb = (size / (1024*1024)).toFixed(2);
+      if (confirm(`Export SQLite DB — size: ${sizeMb} MB. Continue?`)) {
+        downloadSqliteDb();
+      }
+    } catch (e) {
+      console.error('Export confirm error', e);
+      downloadSqliteDb();
+    }
+  };
+
+  // Override global addProject to store projects into SQLite DB
+  window.addProject = async function() {
+    try {
+      // Use the same DOM elements as the original implementation
+      if (!isAdminLoggedIn) {
+        alert('Admin access required. Please log in first.');
+        showErrorMessage('Admin access required. Please log in first.');
+        return;
+      }
+
+      const titleInput = document.getElementById('projectTitle');
+      const typeSelect = document.getElementById('projectType');
+      const fileInput = document.getElementById('projectFile');
+
+      if (!titleInput || !typeSelect || !fileInput) {
+        showErrorMessage('Required form elements not found.');
+        return;
+      }
+
+      const title = titleInput.value.trim();
+      const type = typeSelect.value;
+      const files = fileInput.files;
+
+      if (!title) { showErrorMessage('Please enter a project title.'); return; }
+      if (!files || files.length === 0) { showErrorMessage('Please select project file(s).'); return; }
+
+      const maxSize = 50 * 1024 * 1024;
+      const uploadedFiles = [];
+      // prepare progress UI
+      const progressContainer = document.getElementById('hashProgress') || (() => {
+        const c = document.createElement('div'); c.id = 'hashProgress'; c.className = 'my-2'; document.getElementById('adminUpload').prepend(c); return c; })();
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > maxSize) { alert(`File "${file.name}" is too large.`); return; }
+
+        const url = URL.createObjectURL(file);
+        // compute hash with progress
+        let fileHash = null;
+        try {
+          fileHash = await computeHashWithProgress(file, (p) => {
+            progressContainer.innerText = `Hashing ${file.name}: ${Math.round(p*100)}%`;
+          });
+        } catch (e) {
+          console.warn('Hash compute failed, proceeding without precomputed hash', e);
+        }
+
+        // Persist file blob into IndexedDB via DB.saveFileBlob, providing precomputed hash when available
+        let fileId = null;
+        if (window.DB && window.DB.saveFileBlob) {
+          try {
+            fileId = await window.DB.saveFileBlob(file, fileHash);
+          } catch (e) {
+            console.warn('Failed to persist file blob:', e);
+          }
+        }
+
+        uploadedFiles.push({ name: file.name, size: file.size, type: file.type || 'unknown', url, fileId });
+        progressContainer.innerText = '';
+      }
+
+
+      const projectData = {
+        title,
+        type,
+        description: `A ${type.toLowerCase()} project uploaded via admin panel`,
+        files: uploadedFiles,
+        uploadedAt: new Date().toISOString()
+      };
+
+      if (window.DB && await window.DB.addProject(projectData)) {
+        // reload projects to get IDs and updated data
+        renderAllProjects();
+        titleInput.value = '';
+        fileInput.value = '';
+        alert(`Project "${title}" with ${uploadedFiles.length} file(s) added successfully!`);
+        showSuccessMessage(`Project "${title}" added and saved to local SQLite DB.`);
+      } else {
+        showErrorMessage('Failed to save project to local DB.');
+      }
+    } catch (e) {
+      console.error('Override addProject error:', e);
+      showErrorMessage('An error occurred while adding the project.');
+    }
+  };
+
+  // Provide a download link for the whole SQLite DB
+  window.downloadSqliteDb = function() {
+    try {
+      if (!window.DB) { showErrorMessage('DB not initialized'); return; }
+      const url = window.DB.exportFileUrl();
+      if (!url) { showErrorMessage('Failed to export DB'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'projects.sqlite';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showSuccessMessage('SQLite DB exported (download started).');
+    } catch (e) {
+      console.error('downloadSqliteDb error:', e);
+      showErrorMessage('Failed to export DB.');
+    }
+  };
+
+  // Run initial load
+  document.addEventListener('DOMContentLoaded', () => {
+    loadProjectsFromDB();
+  });
+
+})();
