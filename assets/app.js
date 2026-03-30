@@ -6,6 +6,7 @@
     fingerprint: '',
     entries: []
   };
+  let zipPreviewFilter = '';
 
   function setDbUiState(enabled, reason) {
     const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn', 'importDbBtn', 'importProjectZipBtn'];
@@ -111,6 +112,7 @@
     const panel = document.getElementById('zipPreviewPanel');
     const body = document.getElementById('zipPreviewTableBody');
     const summary = document.getElementById('zipPreviewSummary');
+    const filterInput = document.getElementById('zipPreviewFilterInput');
     if (!panel || !body || !summary) return;
 
     body.innerHTML = '';
@@ -122,10 +124,22 @@
     }
 
     panel.classList.remove('hidden');
-    const includedCount = entries.filter(e => e.include).length;
-    summary.textContent = `ZIP preview: ${includedCount}/${entries.length} files selected`;
+    if (filterInput && filterInput.value !== zipPreviewFilter) {
+      zipPreviewFilter = filterInput.value;
+    }
 
-    entries.forEach((entry, index) => {
+    const query = (zipPreviewFilter || '').trim().toLowerCase();
+    const visibleEntries = entries
+      .map((entry, index) => ({ entry, index }))
+      .filter(item => {
+        if (!query) return true;
+        return item.entry.name.toLowerCase().includes(query);
+      });
+
+    const includedCount = entries.filter(e => e.include).length;
+    summary.textContent = `ZIP preview: ${includedCount}/${entries.length} selected • showing ${visibleEntries.length}`;
+
+    visibleEntries.forEach(({ entry, index }) => {
       const tr = document.createElement('tr');
       tr.className = 'border-b';
       const ext = entry.name.includes('.') ? entry.name.split('.').pop().toLowerCase() : '-';
@@ -150,7 +164,12 @@
 
   function setZipPreviewAll(include) {
     if (!zipPreviewState.entries || zipPreviewState.entries.length === 0) return;
-    zipPreviewState.entries.forEach(e => { e.include = include; });
+    const query = (zipPreviewFilter || '').trim().toLowerCase();
+    zipPreviewState.entries.forEach((entry) => {
+      if (!query || entry.name.toLowerCase().includes(query)) {
+        entry.include = include;
+      }
+    });
     renderZipPreviewTable();
   }
 
@@ -179,6 +198,9 @@
       fingerprint,
       entries
     };
+    zipPreviewFilter = '';
+    const filterInput = document.getElementById('zipPreviewFilterInput');
+    if (filterInput) filterInput.value = '';
     renderZipPreviewTable();
     setProgress('zipImportProgressBar', 'zipImportProgressText', 0.45, `ZIP preview ready (${entries.length} files)`);
   }
@@ -927,6 +949,7 @@
     const projectZipFile = document.getElementById('projectZipFile');
     const zipIncludeAllBtn = document.getElementById('zipIncludeAllBtn');
     const zipExcludeAllBtn = document.getElementById('zipExcludeAllBtn');
+    const zipPreviewFilterInput = document.getElementById('zipPreviewFilterInput');
 
     if (projectSearchInput) {
       projectSearchInput.addEventListener('input', async () => {
@@ -996,6 +1019,13 @@
       zipExcludeAllBtn.addEventListener('click', (e) => {
         e.preventDefault();
         setZipPreviewAll(false);
+      });
+    }
+
+    if (zipPreviewFilterInput) {
+      zipPreviewFilterInput.addEventListener('input', () => {
+        zipPreviewFilter = zipPreviewFilterInput.value || '';
+        renderZipPreviewTable();
       });
     }
 
