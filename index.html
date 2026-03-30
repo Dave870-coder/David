@@ -374,13 +374,33 @@
           </select>
           <input type="file" id="projectFile" multiple class="w-full p-3 xs:p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition-colors file:mr-3 xs:file:mr-4 file:py-2 file:px-3 xs:file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
           <div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-lg">
-            <strong>Supported file types:</strong> All programming languages, images, documents, archives, and media files (Max: 50MB per file)
+            <strong>Supported file types:</strong> Any software/package/file type supported by your browser storage. Very large files may trigger quota warnings.
           </div>
           <div id="dbStatusText" class="text-xs text-amber-700 bg-amber-100 p-2 rounded-lg">Local DB initializing...</div>
+          <div id="quotaWarningText" class="text-xs text-gray-700 bg-gray-100 p-2 rounded-lg">Storage usage: checking...</div>
+
+          <div class="space-y-1">
+            <div class="text-xs text-gray-600" id="uploadCurrentProgressText">Current file: 0%</div>
+            <div class="w-full bg-gray-200 rounded h-2 overflow-hidden"><div id="uploadCurrentProgressBar" class="bg-blue-500 h-2" style="width:0%"></div></div>
+            <div class="text-xs text-gray-600" id="uploadOverallProgressText">Overall upload: 0%</div>
+            <div class="w-full bg-gray-200 rounded h-2 overflow-hidden"><div id="uploadOverallProgressBar" class="bg-green-500 h-2" style="width:0%"></div></div>
+          </div>
+
           <button id="uploadProjectBtn" class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Upload Project</button>
+
+          <div class="space-y-2 p-3 bg-white rounded-xl border border-gray-200">
+            <label for="importDbFile" class="text-sm font-medium text-gray-700">Import SQLite DB file</label>
+            <input type="file" id="importDbFile" accept=".sqlite,.db,application/octet-stream" class="w-full p-2 border border-gray-200 rounded-lg" />
+            <button id="importDbBtn" type="button" class="w-full bg-purple-600 text-white p-3 rounded-xl font-semibold hover:bg-purple-700 transition-all duration-300">Import DB</button>
+            <div class="text-xs text-gray-600" id="importProgressText">Import progress: 0%</div>
+            <div class="w-full bg-gray-200 rounded h-2 overflow-hidden"><div id="importProgressBar" class="bg-purple-500 h-2" style="width:0%"></div></div>
+          </div>
+
           <div class="flex flex-col gap-2">
             <button id="exportDbBtn" type="button" onclick="showExportConfirmation()" class="w-full mt-3 bg-gray-700 text-white p-3 xs:p-4 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Export DB</button>
             <button id="manageDbBtn" type="button" onclick="showManagePanel()" class="w-full bg-indigo-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Manage DB</button>
+            <div class="text-xs text-gray-600" id="exportProgressText">Export progress: 0%</div>
+            <div class="w-full bg-gray-200 rounded h-2 overflow-hidden"><div id="exportProgressBar" class="bg-gray-700 h-2" style="width:0%"></div></div>
           </div>
         </div>
       </div>

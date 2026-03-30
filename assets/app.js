@@ -4,7 +4,7 @@
   let isDbReady = false;
 
   function setDbUiState(enabled, reason) {
-    const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn'];
+    const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn', 'importDbBtn'];
     ids.forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -47,6 +47,55 @@
       return;
     }
     console.log(message);
+  }
+
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const power = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const value = bytes / Math.pow(1024, power);
+    return `${value.toFixed(power === 0 ? 0 : 2)} ${units[power]}`;
+  }
+
+  function setProgress(id, textId, fraction, text) {
+    const bar = document.getElementById(id);
+    const label = document.getElementById(textId);
+    const safeFraction = Math.max(0, Math.min(1, fraction || 0));
+    if (bar) bar.style.width = `${Math.round(safeFraction * 100)}%`;
+    if (label) label.textContent = text || `${Math.round(safeFraction * 100)}%`;
+  }
+
+  async function checkStorageQuota(additionalBytes) {
+    try {
+      if (!navigator.storage || !navigator.storage.estimate) return { supported: false };
+      const estimate = await navigator.storage.estimate();
+      const usage = estimate.usage || 0;
+      const quota = estimate.quota || 0;
+      const projected = usage + (additionalBytes || 0);
+      const percent = quota > 0 ? (projected / quota) * 100 : 0;
+      return { supported: true, usage, quota, projected, percent };
+    } catch (e) {
+      return { supported: false };
+    }
+  }
+
+  async function refreshQuotaWarning(additionalBytes) {
+    const box = document.getElementById('quotaWarningText');
+    if (!box) return;
+    const q = await checkStorageQuota(additionalBytes || 0);
+    if (!q.supported || !q.quota) {
+      box.textContent = 'Storage quota info unavailable in this browser.';
+      box.className = 'text-xs text-gray-700 bg-gray-100 p-2 rounded-lg';
+      return;
+    }
+    box.textContent = `Storage usage: ${formatBytes(q.usage)} / ${formatBytes(q.quota)} (projected: ${formatBytes(q.projected)})`;
+    if (q.percent >= 90) {
+      box.className = 'text-xs text-red-700 bg-red-100 p-2 rounded-lg';
+    } else if (q.percent >= 75) {
+      box.className = 'text-xs text-amber-700 bg-amber-100 p-2 rounded-lg';
+    } else {
+      box.className = 'text-xs text-green-700 bg-green-100 p-2 rounded-lg';
+    }
   }
 
   // Render existing projects from DB into the project list
@@ -431,11 +480,12 @@
   window.showExportConfirmation = function() {
     try {
       if (!isDbReady || !window.DB || !window.DB._raw) { notifyError('DB not initialized. Please wait for Local DB ready.'); return; }
-      const data = window.DB._raw.export();
+      const data = window.DB.exportBytes ? window.DB.exportBytes() : window.DB._raw.export();
+      if (!data) { notifyError('Could not read database bytes for export.'); return; }
       const size = data.length; // number of bytes
       const sizeMb = (size / (1024*1024)).toFixed(2);
       if (confirm(`Export SQLite DB — size: ${sizeMb} MB. Continue?`)) {
-        downloadSqliteDb();
+        downloadSqliteDb(data);
       }
     } catch (e) {
       console.error('Export confirm error', e);
@@ -476,25 +526,44 @@
       if (!title) { notifyError('Please enter a project title.'); return; }
       if (!files || files.length === 0) { notifyError('Please select project file(s).'); return; }
 
-      const maxSize = 50 * 1024 * 1024;
+      const softLargeFileSize = 500 * 1024 * 1024;
       const uploadedFiles = [];
+      const totalBytes = Array.from(files).reduce((sum, f) => sum + f.size, 0);
+      await refreshQuotaWarning(totalBytes);
+      const quotaInfo = await checkStorageQuota(totalBytes);
+      if (quotaInfo.supported && quotaInfo.quota && quotaInfo.projected > quotaInfo.quota) {
+        notifyError('Upload exceeds browser storage quota. Reduce file size or number of files.');
+        return;
+      }
+
       // prepare progress UI
       const progressContainer = document.getElementById('hashProgress') || (() => {
-        const c = document.createElement('div'); c.id = 'hashProgress'; c.className = 'my-2'; document.getElementById('adminUpload').prepend(c); return c; })();
+        const c = document.createElement('div'); c.id = 'hashProgress'; c.className = 'my-2 text-xs text-gray-700'; document.getElementById('adminUpload').prepend(c); return c; })();
+      setProgress('uploadOverallProgressBar', 'uploadOverallProgressText', 0, 'Preparing upload...');
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        if (file.size > maxSize) { alert(`File "${file.name}" is too large.`); return; }
+        if (file.size > softLargeFileSize) {
+          const proceedLarge = confirm(`File "${file.name}" is very large (${formatBytes(file.size)}). Continue with upload?`);
+          if (!proceedLarge) return;
+        }
 
         const url = URL.createObjectURL(file);
         // compute hash with progress
         let fileHash = null;
         try {
+          const useNoHash = file.size > 150 * 1024 * 1024;
           fileHash = await computeHashWithProgress(file, (p) => {
-            progressContainer.innerText = `Hashing ${file.name}: ${Math.round(p*100)}%`;
+            progressContainer.innerText = `Processing ${file.name}: ${Math.round(p*100)}%`;
+            setProgress('uploadCurrentProgressBar', 'uploadCurrentProgressText', p, `Current file: ${file.name} (${Math.round(p*100)}%)`);
           });
+          if (useNoHash) {
+            fileHash = 'NO_HASH';
+            progressContainer.innerText = `Skipped full hash for very large file ${file.name} (no-dedupe mode)`;
+          }
         } catch (e) {
           console.warn('Hash compute failed, proceeding without precomputed hash', e);
+          fileHash = 'NO_HASH';
         }
 
         // Persist file blob into IndexedDB via DB.saveFileBlob, providing precomputed hash when available
@@ -509,6 +578,7 @@
 
         uploadedFiles.push({ name: file.name, size: file.size, type: file.type || 'unknown', url, fileId });
         progressContainer.innerText = '';
+        setProgress('uploadOverallProgressBar', 'uploadOverallProgressText', (i + 1) / files.length, `Uploaded ${i + 1}/${files.length} file(s)`);
       }
 
 
@@ -527,8 +597,12 @@
         fileInput.value = '';
         alert(`Project "${title}" with ${uploadedFiles.length} file(s) added successfully!`);
         notifySuccess(`Project "${title}" added and saved to local SQLite DB.`);
+        setProgress('uploadCurrentProgressBar', 'uploadCurrentProgressText', 1, 'Current file: done');
+        setProgress('uploadOverallProgressBar', 'uploadOverallProgressText', 1, `Upload complete (${formatBytes(totalBytes)})`);
+        await refreshQuotaWarning(0);
       } else {
         notifyError('Failed to save project to local DB.');
+        setProgress('uploadOverallProgressBar', 'uploadOverallProgressText', 0, 'Upload failed');
       }
     } catch (e) {
       console.error('Override addProject error:', e);
@@ -537,23 +611,97 @@
   };
 
   // Provide a download link for the whole SQLite DB
-  window.downloadSqliteDb = function() {
+  window.downloadSqliteDb = function(existingBytes) {
     try {
       if (!isDbReady || !window.DB) { notifyError('DB not initialized'); return; }
-      const url = window.DB.exportFileUrl();
-      if (!url) { notifyError('Failed to export DB'); return; }
+      const bytes = existingBytes || (window.DB.exportBytes ? window.DB.exportBytes() : null);
+      if (!bytes) { notifyError('Failed to export DB'); return; }
+
+      const total = bytes.length;
+      const chunkSize = 1024 * 1024 * 2;
+      const parts = [];
+      for (let offset = 0; offset < total; offset += chunkSize) {
+        const end = Math.min(offset + chunkSize, total);
+        parts.push(bytes.slice(offset, end));
+        setProgress('exportProgressBar', 'exportProgressText', end / total, `Exporting DB... ${Math.round((end / total) * 100)}%`);
+      }
+
+      const blob = new Blob(parts, { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'projects.sqlite';
       document.body.appendChild(a);
       a.click();
       a.remove();
+      URL.revokeObjectURL(url);
+      setProgress('exportProgressBar', 'exportProgressText', 1, `Export complete (${formatBytes(total)})`);
       notifySuccess('SQLite DB exported (download started).');
     } catch (e) {
       console.error('downloadSqliteDb error:', e);
       notifyError('Failed to export DB.');
+      setProgress('exportProgressBar', 'exportProgressText', 0, 'Export failed');
     }
   };
+
+  window.importSqliteDb = async function() {
+    try {
+      if (!isDbReady || !window.DB || !window.DB.importDatabaseBytes) {
+        notifyError('DB not initialized');
+        return;
+      }
+      const input = document.getElementById('importDbFile');
+      const file = input && input.files ? input.files[0] : null;
+      if (!file) {
+        notifyError('Select a .sqlite database file to import.');
+        return;
+      }
+
+      const quotaInfo = await checkStorageQuota(file.size);
+      if (quotaInfo.supported && quotaInfo.quota && quotaInfo.projected > quotaInfo.quota) {
+        notifyError('Import exceeds browser storage quota.');
+        return;
+      }
+
+      const buffer = await readFileAsArrayBufferWithProgress(file, (fraction) => {
+        setProgress('importProgressBar', 'importProgressText', fraction, `Importing DB... ${Math.round(fraction * 100)}%`);
+      });
+
+      const ok = await window.DB.importDatabaseBytes(buffer);
+      if (!ok) {
+        notifyError('DB import failed. File may be invalid.');
+        setProgress('importProgressBar', 'importProgressText', 0, 'Import failed');
+        return;
+      }
+
+      setProgress('importProgressBar', 'importProgressText', 1, `Import complete (${formatBytes(file.size)})`);
+      await refreshQuotaWarning(0);
+      await loadProjectsFromDB();
+      notifySuccess('Database imported successfully.');
+      if (input) input.value = '';
+    } catch (e) {
+      console.error('importSqliteDb error:', e);
+      notifyError('DB import failed.');
+      setProgress('importProgressBar', 'importProgressText', 0, 'Import failed');
+    }
+  };
+
+  function readFileAsArrayBufferWithProgress(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+      reader.onprogress = (evt) => {
+        if (evt.lengthComputable && onProgress) {
+          onProgress(evt.loaded / evt.total);
+        }
+      };
+      reader.onload = () => {
+        if (onProgress) onProgress(1);
+        resolve(reader.result);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
 
   // Run initial load
   document.addEventListener('DOMContentLoaded', () => {
@@ -562,6 +710,7 @@
     const projectSearchInput = document.getElementById('projectSearchInput');
     const projectSearchBtn = document.getElementById('projectSearchBtn');
     const manageSearchInput = document.getElementById('manageSearchInput');
+    const importDbBtn = document.getElementById('importDbBtn');
 
     if (projectSearchInput) {
       projectSearchInput.addEventListener('input', async () => {
@@ -587,6 +736,13 @@
       });
     }
 
+    if (importDbBtn) {
+      importDbBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await window.importSqliteDb();
+      });
+    }
+
     const uploadBtn = document.getElementById('uploadProjectBtn');
     if (uploadBtn) {
       const cloned = uploadBtn.cloneNode(true);
@@ -606,6 +762,7 @@
           return;
         }
         setDbUiState(true);
+        await refreshQuotaWarning(0);
         await loadProjectsFromDB();
       })
       .catch((err) => {

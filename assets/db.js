@@ -154,6 +154,20 @@
       async function saveFileBlob(blob, precomputedHash) {
         // Deduplicate by SHA-256 hash of content. Use hash hex as key.
         try {
+          if (precomputedHash === 'NO_HASH') {
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
+            const entry = {
+              blob: blob,
+              name: blob.name || ('file-' + id),
+              size: blob.size || 0,
+              type: blob.type || 'application/octet-stream',
+              createdAt: new Date().toISOString(),
+              refCount: 1
+            };
+            await idbPut('files', id, entry);
+            return id;
+          }
+
           let hashHex = precomputedHash;
           let buffer = null;
           if (!hashHex) {
@@ -347,6 +361,37 @@
           } catch (e) {
             console.error('DB.exportFileUrl error:', e);
             return null;
+          }
+        },
+        exportBytes: function() {
+          try {
+            return db.export();
+          } catch (e) {
+            console.error('DB.exportBytes error:', e);
+            return null;
+          }
+        },
+        importDatabaseBytes: async function(arrayBuffer) {
+          try {
+            if (!arrayBuffer) return false;
+            const imported = new SQL.Database(new Uint8Array(arrayBuffer));
+            imported.run(`
+              CREATE TABLE IF NOT EXISTS projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                type TEXT,
+                description TEXT,
+                files TEXT,
+                uploadedAt TEXT
+              );
+            `);
+            try { db.close(); } catch (e) {}
+            db = imported;
+            await persist();
+            return true;
+          } catch (e) {
+            console.error('DB.importDatabaseBytes error:', e);
+            return false;
           }
         },
         // Save a file blob into IndexedDB and return generated id
