@@ -376,6 +376,7 @@
           <div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-lg">
             <strong>Supported file types:</strong> All programming languages, images, documents, archives, and media files (Max: 50MB per file)
           </div>
+          <div id="dbStatusText" class="text-xs text-amber-700 bg-amber-100 p-2 rounded-lg">Local DB initializing...</div>
           <button id="uploadProjectBtn" class="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white p-3 xs:p-4 rounded-xl font-semibold hover:from-green-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Upload Project</button>
           <div class="flex flex-col gap-2">
             <button id="exportDbBtn" type="button" onclick="showExportConfirmation()" class="w-full mt-3 bg-gray-700 text-white p-3 xs:p-4 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 text-sm xs:text-base">Export DB</button>
@@ -598,114 +599,7 @@
         }
       });
 
-      // Enhanced Anti-inspect functionality
-      document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        showWarningMessage('Right-click is disabled for security reasons.');
-        return false;
-      });
-
-      document.addEventListener('keydown', function(e) {
-        // Disable F12
-        if (e.key === 'F12') {
-          e.preventDefault();
-          showWarningMessage('Developer tools are disabled.');
-          return false;
-        }
-        // Disable Ctrl+Shift+I (Chrome, Firefox, Edge)
-        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
-          e.preventDefault();
-          showWarningMessage('Developer tools are disabled.');
-          return false;
-        }
-        // Disable Ctrl+Shift+C (Chrome, Firefox, Edge)
-        if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
-          e.preventDefault();
-          showWarningMessage('Developer tools are disabled.');
-          return false;
-        }
-        // Disable Ctrl+Shift+J (Chrome, Firefox, Edge)
-        if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) {
-          e.preventDefault();
-          showWarningMessage('Developer tools are disabled.');
-          return false;
-        }
-        // Disable Ctrl+Shift+K (Firefox)
-        if (e.ctrlKey && e.shiftKey && (e.key === 'K' || e.key === 'k')) {
-          e.preventDefault();
-          showWarningMessage('Developer tools are disabled.');
-          return false;
-        }
-        // Disable Ctrl+U (View Source - All browsers)
-        if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
-          e.preventDefault();
-          showWarningMessage('View source is disabled.');
-          return false;
-        }
-        // Disable F11 (Fullscreen, but can interfere with dev tools)
-        if (e.key === 'F11') {
-          // Allow F11 for legitimate fullscreen use, but monitor
-          return true;
-        }
-      });
-
-      // Disable right-click on images and other elements
-      document.querySelectorAll('img, video, audio, canvas, svg').forEach(element => {
-        element.addEventListener('contextmenu', function(e) {
-          e.preventDefault();
-          showWarningMessage('Right-click is disabled on media elements.');
-          return false;
-        });
-      });
-
-      // Prevent drag and drop of images
-      document.addEventListener('dragstart', function(e) {
-        if (e.target.tagName === 'IMG') {
-          e.preventDefault();
-          showWarningMessage('Image dragging is disabled.');
-          return false;
-        }
-      });
-
-      // Prevent text selection on certain elements (optional)
-      document.addEventListener('selectstart', function(e) {
-        // Allow text selection on form inputs
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.contentEditable === 'true') {
-          return true;
-        }
-        // Prevent selection on other elements for security
-        e.preventDefault();
-        return false;
-      });
-
-      // Detect and prevent developer tools
-      let devtoolsOpen = false;
-      const threshold = 160;
-
-      setInterval(() => {
-        if (window.outerHeight - window.innerHeight > threshold || window.outerWidth - window.innerWidth > threshold) {
-          if (!devtoolsOpen) {
-            devtoolsOpen = true;
-            showWarningMessage('Developer tools detected. This action is not allowed.');
-            // Optional: redirect or take other action
-            // window.location.href = 'about:blank';
-          }
-        } else {
-          devtoolsOpen = false;
-        }
-      }, 500);
-
-      // Function to show warning messages
-      function showWarningMessage(message) {
-        const warningDiv = document.createElement('div');
-        warningDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
-        warningDiv.innerText = message;
-        document.body.appendChild(warningDiv);
-
-        setTimeout(() => {
-          warningDiv.remove();
-        }, 3000);
-      }
+      // Keep interactions fully usable for uploads/downloads and project management.
 
       // Generate daily seed for image rotation
       const today = new Date();
@@ -1224,6 +1118,7 @@
     });
   </script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
   <script src="assets/db.js"></script>
   <script src="assets/jszip-loader.js"></script>
   <script src="assets/app.js"></script>

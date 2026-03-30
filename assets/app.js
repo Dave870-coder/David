@@ -1,10 +1,36 @@
 // assets/app.js
 // Integrates the existing UI with the in-browser SQLite wrapper (window.DB)
 (async function(){
+  let isDbReady = false;
+
+  function setDbUiState(enabled, reason) {
+    const ids = ['uploadProjectBtn', 'exportDbBtn', 'manageDbBtn', 'dedupeAllBtn', 'permanentDeleteDbBtn'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.disabled = !enabled;
+      if (!enabled) {
+        el.classList.add('opacity-60', 'cursor-not-allowed');
+        if (reason) el.title = reason;
+      } else {
+        el.classList.remove('opacity-60', 'cursor-not-allowed');
+        el.title = '';
+      }
+    });
+
+    const status = document.getElementById('dbStatusText');
+    if (status) {
+      status.textContent = enabled ? 'Local DB ready' : (reason || 'Local DB initializing...');
+      status.className = enabled ? 'text-xs text-green-700 bg-green-100 p-2 rounded-lg' : 'text-xs text-amber-700 bg-amber-100 p-2 rounded-lg';
+    }
+  }
+
   try {
-    await window.sqliteReady;
+    const readyResult = await window.sqliteReady;
+    isDbReady = readyResult === true && !!window.DB;
   } catch (e) {
     console.error('SQLite failed to initialize in app.js:', e);
+    isDbReady = false;
   }
 
   function notifyError(message) {
@@ -237,6 +263,10 @@
   }
 
   window.showManagePanel = function() {
+    if (!isDbReady || !window.DB) {
+      notifyError('Local database is not ready yet. Please wait and refresh if needed.');
+      return;
+    }
     const panel = document.getElementById('manageDbPanel');
     if (!panel) return;
     panel.classList.toggle('hidden');
@@ -400,7 +430,7 @@
   // Export confirmation showing DB size
   window.showExportConfirmation = function() {
     try {
-      if (!window.DB || !window.DB._raw) { alert('DB not initialized'); return; }
+      if (!isDbReady || !window.DB || !window.DB._raw) { notifyError('DB not initialized. Please wait for Local DB ready.'); return; }
       const data = window.DB._raw.export();
       const size = data.length; // number of bytes
       const sizeMb = (size / (1024*1024)).toFixed(2);
@@ -422,6 +452,11 @@
       if (!isLoggedIn) {
         alert('Admin access required. Please log in first.');
         notifyError('Admin access required. Please log in first.');
+        return;
+      }
+
+      if (!isDbReady || !window.DB) {
+        notifyError('Local DB is not ready yet. Please wait a moment and try again.');
         return;
       }
 
@@ -504,7 +539,7 @@
   // Provide a download link for the whole SQLite DB
   window.downloadSqliteDb = function() {
     try {
-      if (!window.DB) { notifyError('DB not initialized'); return; }
+      if (!isDbReady || !window.DB) { notifyError('DB not initialized'); return; }
       const url = window.DB.exportFileUrl();
       if (!url) { notifyError('Failed to export DB'); return; }
       const a = document.createElement('a');
@@ -522,6 +557,8 @@
 
   // Run initial load
   document.addEventListener('DOMContentLoaded', () => {
+    setDbUiState(false, 'Local DB initializing...');
+
     const projectSearchInput = document.getElementById('projectSearchInput');
     const projectSearchBtn = document.getElementById('projectSearchBtn');
     const manageSearchInput = document.getElementById('manageSearchInput');
@@ -560,7 +597,23 @@
       });
     }
 
-    loadProjectsFromDB();
+    Promise.resolve(window.sqliteReady)
+      .then(async (ok) => {
+        isDbReady = ok === true && !!window.DB;
+        if (!isDbReady) {
+          setDbUiState(false, 'Local DB failed to initialize');
+          notifyError('Local DB failed to initialize. Check network and reload.');
+          return;
+        }
+        setDbUiState(true);
+        await loadProjectsFromDB();
+      })
+      .catch((err) => {
+        console.error('sqliteReady failure:', err);
+        isDbReady = false;
+        setDbUiState(false, 'Local DB failed to initialize');
+        notifyError('Local DB failed to initialize. Check network and reload.');
+      });
   });
 
 })();
